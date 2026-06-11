@@ -5,19 +5,19 @@
  */
 class AplicacionMuseo {
     constructor(contenedorId) {
-        this.root = document.getElementById(contenedorId);
-        this.inventarioMemoria = [];
-        this.instanciasTarjetas = {};
+         const esGitHubPages = window.location.hostname.includes('github.io');
+        const repoName = esGitHubPages ? window.location.pathname.split('/')[1] : '';
+        const baseRuta = esGitHubPages ? `/${repoName}/` : '';
         
         this.RUTAS_EXCEL = {
-            'inah_museos': 'data/inah_museos.xlsx',
-            'monumentos': 'data/monumentos.xlsx',
-            'objetos_externos': 'data/objetos _externos.xlsx',
-            'solicitudes': 'data/solicitudes.xlsx'
+            'inah_museos': `${baseRuta}data/insh_museos.xlsx`,
+            'monumentos': `${baseRuta}data/monumentos.xlsx`,
+            'objetos_externos': `${baseRuta}data/objetos _externos.xlsx`,
+            'solicitudes': `${baseRuta}data/solicitudes.xlsx`
         };
 
-        this.inicializarEstructuraBase();
-        this.activarEscuchadorGlobal();
+        console.log("Rutas de Excel configuradas para el entorno actual:", this.RUTAS_EXCEL);  
+    
     }
 
     inicializarEstructuraBase() {
