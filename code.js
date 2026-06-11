@@ -379,31 +379,46 @@ class TarjetaAcervo {
         });
     }
 
-    abrirChatGemini() {
+    async abrirChatGemini() {
         const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
         if(modalPopup) modalPopup.hide();
 
         document.getElementById('modal-titulo-acervo').innerText = `Gemini AI Engine: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
+const chatBox = document.getElementById('modal-chat-box');
+    chatBox.innerHTML = `<div class="text-muted">Gemini está pensando...</div>`;
 
-        const chatBox = document.getElementById('modal-chat-box');
-        let opinionGemini = `Procesando fila de Excel activa con POO. Origen de metadatos: [${this.origen.toUpperCase()}]. Atributos consolidados: ${this.UI.linea1} | ${this.UI.linea2}. `;
-        
-        if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
-            opinionGemini += `Aviso del Auditor: La columna original de Excel [${this.UI.nombreColumnaOriginal}] no posee datos válidos ("sin informacion"). Por favor, introduce información fidedigna para actualizar el libro de cálculo inmediatamente.`;
-        } else {
-            opinionGemini += `El estado actual del registro dice: "${this.UI.campoEscaneable}".`;
-        }
+    // 1. Creas el "prompt" o instrucción para la IA
+    const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
+    Atributos: ${this.UI.linea1} | ${this.UI.linea2}. 
+    El campo escaneable actual dice: "${this.UI.campoEscaneable}". 
+    Por favor, dame una opinión profesional de este registro.`;
 
+    try {
+        // 2. Haces la llamada real a la API (Ejemplo simplificado usando fetch)
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=TU_API_KEY_AQUÍ', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptParaGemini }] }]
+            })
+        });
+
+        const data = await response.json();
+        const respuestaIA = data.candidates[0].content.parts[0].text;
+
+        // 3. Inyectas la respuesta REAL de Gemini en el HTML
         chatBox.innerHTML = `
-            <div class="p-2 mb-2 bg-light rounded text-dark border-start border-4 border-warning">
-                <span class="badge bg-dark mb-1">Gemini Strict Mode</span><br>
-                <span>${opinionGemini}</span>
+            <div class="p-2 mb-2 bg-light rounded text-dark border-start border-4 border-success">
+                <span class="badge bg-success mb-1">Gemini AI Real Response</span><br>
+                <span>${respuestaIA}</span>
             </div>
         `;
 
-        const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
-        modalChat.show();
+    } catch (error) {
+        chatBox.innerHTML = `<div class="text-danger">Error al conectar con Gemini.</div>`;
+    }
+}
     }
 
     analizarYActualizarCeldaExcel(textoUsuario) {
