@@ -17,10 +17,10 @@ class AplicacionMuseo {
         
         // 3. Diccionario de rutas corregido letra por letra según tus archivos reales
         this.RUTAS_EXCEL = {
-            'inah_museos': `${baseRuta}data/INAH_museos.xlsx - INAH_museos.csv.csv`,
-            'monumentos': `${baseRuta}data/monumentos.xlsx - monumentos.csv.csv`,
-            'objetos_externos': `${baseRuta}data/Objetos _externos.xlsx - Sheet1.csv`,
-            'solicitudes': `${baseRuta}data/solicitudesTranscript.xlsx - solicitudesTranscript.csv.csv`
+            'inah_museos': `${baseRuta}data/inah_museos.xlsx`,
+            'monumentos': `${baseRuta}data/monumentos.xlsx`,
+            'objetos_externos': `${baseRuta}data/objetos_externos.xlsx`,
+            'solicitudes': `${baseRuta}data/solicitudes.xlsx`
         };
 
         console.log("Rutas de Excel configuradas para el entorno actual:", this.RUTAS_EXCEL);  
