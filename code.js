@@ -1,6 +1,6 @@
 /**
  * =========================================================================
- * CLASE MAESTRA: AplicacionMuseo (Orquestador Guiado por Eventos)
+ * CLASE MAESTRA: AplicacionMuseo (Orquestador Central POO)
  * =========================================================================
  */
 class AplicacionMuseo {
@@ -15,7 +15,7 @@ class AplicacionMuseo {
         const repoName = esGitHubPages ? window.location.pathname.split('/')[1] : '';
         const baseRuta = esGitHubPages ? `/${repoName}/` : '';
         
-        // 3. Diccionario de rutas corregido letra por letra según tus archivos reales
+        // 3. Diccionario de rutas enlazado a tu subcarpeta data/ en GitHub
         this.RUTAS_EXCEL = {
             'inah_museos': `${baseRuta}data/inah_museos.xlsx`,
             'monumentos': `${baseRuta}data/monumentos.xlsx`,
@@ -25,11 +25,11 @@ class AplicacionMuseo {
 
         console.log("Rutas de Excel configuradas para el entorno actual:", this.RUTAS_EXCEL);  
 
-        // 4. Disparadores del ciclo de vida del objeto (Si quitas esto, la app no arranca)
+        // 4. Disparadores del ciclo de vida del objeto
         this.inicializarEstructuraBase();
         this.activarEscuchadorGlobal();
         this.vincularEventosGlobales();
-    } // 
+    } // CORREGIDO: Cierre de llave limpio del constructor
 
     inicializarEstructuraBase() {
         this.root.innerHTML = `
@@ -38,7 +38,6 @@ class AplicacionMuseo {
                 <p class="text-center text-muted mb-5">Haz clic directamente sobre los elementos visuales del escenario para auditar el Excel mediante metadatos automáticos.</p>
 
                 <div class="row justify-content-center gap-4 mb-5" id="escenario-3d-simulado">
-                    
                     <div class="col-auto text-center">
                         <img src="https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=200&q=80" 
                              class="objeto-clicker-3d" 
@@ -58,7 +57,7 @@ class AplicacionMuseo {
                     <div class="col-auto text-center">
                         <img src="https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=200&q=80" 
                              class="objeto-clicker-3d" 
-                             data-id="3" data-origen="objetos_externos" data-visor="loteria"
+                             data-id="1" data-origen="objetos_externos" data-visor="loteria"
                              alt="Objeto de Arte">
                         <small class="d-block text-muted mt-1">Pieza Externa</small>
                     </div>
@@ -66,11 +65,10 @@ class AplicacionMuseo {
                     <div class="col-auto text-center">
                         <img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?w=200&q=80" 
                              class="objeto-clicker-3d" 
-                             data-id="4" data-origen="solicitudes" data-visor="ficha"
+                             data-id="1" data-origen="solicitudes" data-visor="ficha"
                              alt="Manuscrito">
                         <small class="d-block text-muted mt-1">Documento Antiguo</small>
                     </div>
-
                 </div>
 
                 <div id="status-carga" class="text-center mb-4 text-info small fw-bold font-monospace"></div>
@@ -117,26 +115,24 @@ class AplicacionMuseo {
         `;
     }
 
-    /**
-     * RESOLUCIÓN AL PROBLEMA: Escuchador Global Automático (Delegación de Eventos)
-     * Captura el click en cualquier imagen con la clase 'objeto-clicker-3d' y extrae sus argumentos solos
-     */
     activarEscuchadorGlobal() {
         this.root.addEventListener('click', (evento) => {
             const elementoTocado = evento.target;
-
-            // Verificamos si el usuario clickeó una de nuestras imágenes interactivas
             if (elementoTocado.classList.contains('objeto-clicker-3d')) {
-                
-                // ¡Magía! Extracción automática de argumentos desde el elemento HTML sin escribirlos a mano
                 const id = parseInt(elementoTocado.getAttribute('data-id'));
                 const origen = elementoTocado.getAttribute('data-origen');
                 const tipoVisor = elementoTocado.getAttribute('data-visor');
-
-                // Disparamos la carga asíncrona pasándole las variables extraídas automáticamente
                 this.solicitarCargaExcel(id, origen, tipoVisor);
             }
         });
+    }
+
+    vincularEventosGlobales() {
+        window.limpiarTablero = () => {
+            this.inventarioMemoria = [];
+            this.instanciasTarjetas = {};
+            this.inicializarEstructuraBase();
+        };
     }
 
     solicitarCargaExcel(id, origen, tipoVisor) {
@@ -214,7 +210,7 @@ class AplicacionMuseo {
 
 /**
  * =========================================================================
- * CLASE HIJA / COMPONENTE: TarjetaAcervo (Conserva el comportamiento intacto)
+ * CLASE HIJA / COMPONENTE: TarjetaAcervo 
  * =========================================================================
  */
 class TarjetaAcervo {
@@ -238,47 +234,52 @@ class TarjetaAcervo {
         this.procesarCabecerasExcelEspecificas();
     }
 
+    /**
+     * Mapeo corregido basándose en las columnas reales de tus archivos Excel subidos
+     */
     procesarCabecerasExcelEspecificas() {
         const fila = this.datosOriginales;
 
         switch (this.origen) {
             case 'inah_museos':
-                this.UI.titulo = fila['Nom_Museo'] || "Museo sin Nombre";
+                this.UI.titulo = fila['nombre'] || "Museo INAH";
                 this.UI.imagen = "https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=400&q=80";
-                this.UI.linea1 = `Entidad: ${fila['entidad'] || 'No especificada'}`;
-                this.UI.linea2 = `Condición: ${fila['condicion'] || 'Abierto'}`;
-                this.UI.nombreColumnaOriginal = 'descripcion_actividades';
+                this.UI.linea1 = `Estado: ${fila['estado'] || 'No especificado'}`;
+                this.UI.linea2 = `Municipio: ${fila['municipio_localidad'] || 'No especificado'}`;
+                this.UI.nombreColumnaOriginal = 'condicion'; // Campo propenso a auditar
                 break;
 
             case 'monumentos':
-                this.UI.titulo = fila['denominacion'] || "Monumento Histórico";
+                this.UI.titulo = fila['nombre_actual'] || "Monumento Histórico";
                 this.UI.imagen = "https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=400&q=80";
-                this.UI.linea1 = `Municipio: ${fila['municipio'] || 'N/D'}`;
-                this.UI.linea2 = `Estado: ${fila['estado'] || 'N/D'}`;
-                this.UI.nombreColumnaOriginal = 'sintesis_historica';
+                this.UI.linea1 = `Tipo: ${fila['tipo_monumento'] || 'Inmueble'}`;
+                this.UI.linea2 = `Entidad: ${fila['entidad_federativa'] || 'N/D'}`;
+                this.UI.nombreColumnaOriginal = 'nombre_original'; // Columna propensa a decir "sin dato"
                 break;
 
             case 'objetos_externos':
-                this.UI.titulo = fila['nombre_objeto'] || "Pieza de Exposición";
+                this.UI.titulo = fila['objeto'] || "Pieza Externa";
                 this.UI.imagen = "https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=400&q=80";
-                this.UI.linea1 = `Colección: ${fila['coleccion_origen'] || 'Externa'}`;
-                this.UI.linea2 = `Periodo: ${fila['periodo'] || 'Desconocido'}`;
-                this.UI.nombreColumnaOriginal = 'estado_conservacion';
+                this.UI.linea1 = `ID Objeto: ${this.id}`;
+                this.UI.linea2 = `Tipo: Elemento Cultural`;
+                this.UI.nombreColumnaOriginal = 'descripcion'; // Tu tabla Objetos_externos tiene id, objeto, descripcion
                 break;
 
             case 'solicitudes':
-                this.UI.titulo = `Código Doc: ${fila['codigo_documento'] || 'Doc-S/N'}`;
+                this.UI.titulo = fila['asunto'] || "Solicitud de Transcripción";
                 this.UI.imagen = "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80";
-                this.UI.linea1 = `Usuario: ${fila['nombre_usuario'] || 'Anónimo'}`;
-                this.UI.linea2 = `Fecha: ${fila['fecha_registro'] || 'Reciente'}`;
-                this.UI.nombreColumnaOriginal = 'texto_transcrito';
+                this.UI.linea1 = `Ingreso: ${fila['fecha_ingreso'] || 'N/A'}`;
+                this.UI.linea2 = `Volumen: ${fila['total'] || 'No especificado'}`;
+                this.UI.nombreColumnaOriginal = 'observaciones'; // Tus solicitudes tienen observaciones al final
                 break;
         }
 
+        // Recuperar y limpiar el valor de la celda auditada
         const valorCelda = fila[this.UI.nombreColumnaOriginal];
         this.UI.campoEscaneable = (valorCelda !== undefined && valorCelda !== null) ? String(valorCelda).trim() : "sin informacion";
 
-        if (this.UI.campoEscaneable === '') {
+        // Adaptamos el filtro de detección a los valores "sin dato" de tus Excel reales
+        if (this.UI.campoEscaneable === '' || this.UI.campoEscaneable.toLowerCase() === 'sin dato') {
             this.UI.campoEscaneable = "sin informacion";
         }
     }
@@ -390,53 +391,54 @@ class TarjetaAcervo {
         });
     }
 
+    // CORREGIDO: Organización y cierre asíncrono limpio de llaves para el chat de Gemini
     async abrirChatGemini() {
         const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
         if(modalPopup) modalPopup.hide();
 
         document.getElementById('modal-titulo-acervo').innerText = `Gemini AI Engine: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
-const chatBox = document.getElementById('modal-chat-box');
-    chatBox.innerHTML = `<div class="text-muted">Gemini está pensando...</div>`;
+        
+        const chatBox = document.getElementById('modal-chat-box');
+        chatBox.innerHTML = `<div class="text-muted">Gemini está pensando...</div>`;
 
-    // 1. Creas el "prompt" o instrucción para la IA
-    const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
-    Atributos: ${this.UI.linea1} | ${this.UI.linea2}. 
-    El campo escaneable actual dice: "${this.UI.campoEscaneable}". 
-    Por favor, dame una opinión profesional de este registro.`;
+        const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
+        Atributos: ${this.UI.linea1} | ${this.UI.linea2}. 
+        El campo escaneable actual dice: "${this.UI.campoEscaneable}". 
+        Por favor, dame una opinión profesional de este registro.`;
 
-    try {
-        // 2. Haces la llamada real a la API (Ejemplo simplificado usando fetch)
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: promptParaGemini }] }]
-            })
-        });
+        try {
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptParaGemini }] }]
+                })
+            });
 
-        const data = await response.json();
-        const respuestaIA = data.candidates[0].content.parts[0].text;
+            const data = await response.json();
+            const respuestaIA = data.candidates[0].content.parts[0].text;
 
-        // 3. Inyectas la respuesta REAL de Gemini en el HTML
-        chatBox.innerHTML = `
-            <div class="p-2 mb-2 bg-light rounded text-dark border-start border-4 border-success">
-                <span class="badge bg-success mb-1">Gemini AI Real Response</span><br>
-                <span>${respuestaIA}</span>
-            </div>
-        `;
-
-    } catch (error) {
-        chatBox.innerHTML = `<div class="text-danger">Error al conectar con Gemini.</div>`;
-    }
-}
-    
+            chatBox.innerHTML = `
+                <div class="p-2 mb-2 bg-light rounded text-dark border-start border-4 border-success">
+                    <span class="badge bg-success mb-1">Gemini AI Real Response</span><br>
+                    <span>${respuestaIA}</span>
+                </div>
+            `;
+        } catch (error) {
+            chatBox.innerHTML = `<div class="text-danger">Error al conectar con Gemini.</div>`;
+        }
+    } // Llave de cierre asíncrono arreglada
 
     analizarYActualizarCeldaExcel(textoUsuario) {
         if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
             if (textoUsuario.trim().length > 3) {
                 this.UI.campoEscaneable = textoUsuario;
                 this.datosOriginales[this.UI.nombreColumnaOriginal] = textoUsuario;
+                
+                const elemExcel = document.getElementById(`dom-excel-${this.origen}-${this.id}`);
+                if (elemExcel) elemExcel.innerText = textoUsuario;
+
                 return `Análisis Sintáctico Exitoso. Detecté la bandera vacía en la columna [${this.UI.nombreColumnaOriginal}]. Tu aporte fue integrado en la fila correspondiente al ID ${this.id} dentro del libro de cálculo en ejecución.`;
             }
             return "Aporte descartado: La información suministrada es insuficiente o demasiado corta.";
