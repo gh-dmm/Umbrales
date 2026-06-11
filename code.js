@@ -5,20 +5,31 @@
  */
 class AplicacionMuseo {
     constructor(contenedorId) {
-         const esGitHubPages = window.location.hostname.includes('github.io');
+        // 1. Inicialización obligatoria de propiedades de la clase
+        this.root = document.getElementById(contenedorId);
+        this.inventarioMemoria = [];
+        this.instanciasTarjetas = {};
+        
+        // 2. Detección automática del entorno (Localhost vs GitHub Pages)
+        const esGitHubPages = window.location.hostname.includes('github.io');
         const repoName = esGitHubPages ? window.location.pathname.split('/')[1] : '';
         const baseRuta = esGitHubPages ? `/${repoName}/` : '';
         
+        // 3. Diccionario de rutas corregido letra por letra según tus archivos reales
         this.RUTAS_EXCEL = {
-            'inah_museos': `${baseRuta}data/insh_museos.xlsx`,
-            'monumentos': `${baseRuta}data/monumentos.xlsx`,
-            'objetos_externos': `${baseRuta}data/objetos _externos.xlsx`,
-            'solicitudes': `${baseRuta}data/solicitudes.xlsx`
+            'inah_museos': `${baseRuta}data/INAH_museos.xlsx - INAH_museos.csv.csv`,
+            'monumentos': `${baseRuta}data/monumentos.xlsx - monumentos.csv.csv`,
+            'objetos_externos': `${baseRuta}data/Objetos _externos.xlsx - Sheet1.csv`,
+            'solicitudes': `${baseRuta}data/solicitudesTranscript.xlsx - solicitudesTranscript.csv.csv`
         };
 
         console.log("Rutas de Excel configuradas para el entorno actual:", this.RUTAS_EXCEL);  
-    
-    }
+
+        // 4. Disparadores del ciclo de vida del objeto (Si quitas esto, la app no arranca)
+        this.inicializarEstructuraBase();
+        this.activarEscuchadorGlobal();
+        this.vincularEventosGlobales();
+    } // 
 
     inicializarEstructuraBase() {
         this.root.innerHTML = `
