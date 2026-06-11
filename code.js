@@ -430,7 +430,7 @@ const chatBox = document.getElementById('modal-chat-box');
         chatBox.innerHTML = `<div class="text-danger">Error al conectar con Gemini.</div>`;
     }
 }
-    }
+    
 
     analizarYActualizarCeldaExcel(textoUsuario) {
         if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
