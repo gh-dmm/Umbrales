@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visores Culturales - Sistema de Inventario e IA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <div class="container py-5">
+        <h1 class="text-center mb-4 text-warning fw-bold">Sistema de Acervos Culturales</h1>
+        <p class="text-center text-muted mb-5">Explora las bases de datos. Los visores se abrirán en un Popup interactivo y podrás coleccionarlos en tu inventario dinámico.</p>
+
+        <div class="row justify-content-center gap-2 mb-4">
+            <div class="col-auto">
+                <button class="btn btn-primary shadow-sm fw-bold" onclick="cargarRutaAutomatica(1, 'inah_museos', 'loteria')">
+                    🏛️ Museo INAH (ID: 1 - Lotería)
+                </button>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-success shadow-sm fw-bold" onclick="cargarRutaAutomatica(2, 'monumentos', 'ficha')">
+                    🏛️ Monumento (ID: 2 - Ficha)
+                </button>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-info text-dark shadow-sm fw-bold" onclick="cargarRutaAutomatica(3, 'objetos_externos', 'loteria')">
+                    🏛️ Objeto Externo (ID: 3 - Lotería)
+                </button>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-danger shadow-sm fw-bold" onclick="cargarRutaAutomatica(4, 'solicitudes', 'ficha')">
+                    🏛️ Solicitud (ID: 4 - Ficha)
+                </button>
+            </div>
+        </div>
+
+        <div id="status-carga" class="text-center mb-4 text-info small fw-bold font-monospace"></div>
+        
+        <div class="inventory-section p-4 rounded mb-5">
+            <h3 class="text-warning mb-3 border-bottom border-secondary pb-2">🎒 Mi Inventario Cultural (<span id="inv-count">0</span>)</h3>
+            <div class="row gap-3 justify-content-start" id="inventario-items-container">
+                <p class="text-muted fst-italic" id="inv-vacio-msg">El inventario está vacío. Abre un acervo y agrégalo para guardarlo en la memoria dinámica.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="acervoPopupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-transparent border-0 position-relative">
+                
+                <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">&times;</button>
+                
+                <div id="popup-visor-body" class="d-flex flex-column align-items-center"></div>
+                
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="geminiChatModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered text-dark">
+            <div class="modal-content bg-light shadow-lg">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title text-warning" id="modal-titulo-acervo">Chat con Gemini</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modal-instancia-key">
+                    <div id="modal-chat-box" class="p-3 border rounded bg-white mb-3 shadow-inner" style="max-height: 280px; overflow-y: auto;"></div>
+                    <div class="form-group">
+                        <label class="form-label fw-bold text-secondary">Aporta la información faltante para el Excel:</label>
+                        <textarea id="modal-user-text" class="form-control border-secondary" rows="3" placeholder="Escribe los datos históricos aquí..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-warning fw-bold" onclick="ejecutarEnvioAporte()">Escanear con IA</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="code.js"></script>
+</body>
+</html>
