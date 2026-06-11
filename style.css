@@ -1,0 +1,137 @@
+body {
+    background-color: #12181f;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- Efecto de Clicker para Imágenes en el Escenario 3D --- */
+.objeto-clicker-3d {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #4f5d75;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+}
+
+.objeto-clicker-3d:hover {
+    transform: scale(1.1) rotate(2deg);
+    border-color: #ffb703;
+    box-shadow: 0 12px 24px rgba(255, 183, 3, 0.3);
+}
+
+.objeto-clicker-3d:active {
+    transform: scale(0.95);
+}
+
+/* --- Inventario --- */
+.inventory-section {
+    background-color: #1a232e;
+    border: 1px dashed #4f5d75;
+}
+
+.inventory-chip {
+    background-color: #2d3748;
+    border: 1px solid #ffb703;
+    border-radius: 8px;
+    padding: 10px;
+    width: auto;
+    min-width: 150px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.inventory-chip:hover {
+    transform: translateY(-3px);
+    background-color: #3a475c;
+}
+
+/* --- Cruz de Cierre --- */
+.btn-close-custom {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    background: #ffb703;
+    color: #12181f;
+    border: none;
+    width: 35px;
+    height: 35px;
+    font-size: 24px;
+    line-height: 31px;
+    font-weight: bold;
+    border-radius: 50%;
+    z-index: 1055;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.btn-close-custom:hover {
+    background: #fb8500;
+    color: #fff;
+}
+
+/* --- Lotería 3D --- */
+.loteria-card-container {
+    width: 240px;
+    height: 340px;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+.loteria-card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.loteria-card-container.flipped .loteria-card {
+    transform: rotateY(180deg);
+}
+
+.front, .back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+}
+
+.front {
+    background: linear-gradient(135deg, #111d27 0%, #1c3144 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 2px solid #ffb703;
+}
+
+.back {
+    transform: rotateY(180deg);
+    position: relative;
+    background-color: #000;
+    border: 2px solid #ffb703;
+}
+
+.loteria-title {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+#modal-chat-box {
+    font-size: 0.9rem;
+    background-color: #f8f9fa;
+}
