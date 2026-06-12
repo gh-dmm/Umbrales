@@ -340,7 +340,7 @@ class TarjetaAcervo {
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
         
         const chatBox = document.getElementById('modal-chat-box');
-        chatBox.innerHTML = `<div class="text-muted">Auditando datos de origen con Gemini...</div>`;
+        chatBox.innerHTML = `<div class="text-muted">Auditando datos de origen con Gemini 2.5...</div>`;
 
         const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
         Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}". 
@@ -361,9 +361,11 @@ class TarjetaAcervo {
                 apiVersion: "v1" 
             });
 
-            // IMPLEMENTACIÓN DE CAPTURA 1: Llamada en bloque estático (Evita el error de ruteo del Stream)
+            // =========================================================================
+            // AJUSTE MAESTRO: Cambiamos a gemini-2.5-flash para compatibilidad en v1
+            // =========================================================================
             const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash', 
+                model: 'gemini-2.5-flash', 
                 contents: promptParaGemini
             });
 
@@ -378,8 +380,8 @@ class TarjetaAcervo {
         } catch (error) {
             chatBox.innerHTML = `
                 <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded small">
-                    <strong>Fallo de Comunicación SDK:</strong> Enlace restringido.<br>
-                    <span class="text-muted text-xs">Verifica que tu proyecto Cloud tenga habilitada la API de lenguaje.</span>
+                    <strong>Fallo de Comunicación SDK:</strong><br>
+                    <span class="text-muted text-xs">${error.message}</span>
                 </div>`;
             console.error("Detalle del fallo estructural:", error);
         }
