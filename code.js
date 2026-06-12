@@ -322,9 +322,17 @@ class TarjetaAcervo {
         }
     }
 
-    async abrirChatGemini() {
-        const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
-        if(modalPopup) modalPopup.hide();
+   async abrirChatGemini() {
+        // SOLUCIÓN ARIA: Quitamos el foco del botón presionado antes de ocultar el modal
+        if (document.activeElement) {
+            document.activeElement.blur();
+        }
+
+        const modalElement = document.getElementById('acervoPopupModal');
+        const modalPopup = bootstrap.Modal.getInstance(modalElement);
+        if (modalPopup) {
+            modalPopup.hide();
+        }
 
         document.getElementById('modal-titulo-acervo').innerText = `Gemini AI: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
@@ -336,11 +344,9 @@ class TarjetaAcervo {
         Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
 
         // =========================================================================
-        // TU CREDENCIAL LARGA VÁLIDA (INICIA CON AQ.Ab...)
+        // TU CREDENCIAL COMPLETA DE ENTORNO (INICIA CON AQ.Ab...)
         // =========================================================================
         const API_KEY = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
-        
-        // ENDPOINT ADAPTADO PARA SOLICITUDES DE IDENTIDAD UNIFICADA v1
         const urlGemini = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
         try {
@@ -356,7 +362,6 @@ class TarjetaAcervo {
 
             const data = await response.json();
             
-            // Si el servidor de Google Cloud te responde con un bloqueo específico
             if (data.error) {
                 chatBox.innerHTML = `
                     <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded">
@@ -377,7 +382,8 @@ class TarjetaAcervo {
             console.error("Detalle del fallo:", error);
         }
         
-        new bootstrap.Modal(document.getElementById('geminiChatModal')).show();
+        const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
+        modalChat.show();
     }
     analizarYActualizarCeldaExcel(textoUsuario) {
         if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
