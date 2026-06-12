@@ -7,6 +7,62 @@ body {
     font-family: 'Courier New', Courier, monospace;
 }
 /* =========================================================================
+   MATRIZ DE POSICIONAMIENTO PARA FONDO DE VITRINA
+   ========================================================================= */
+
+/* El contenedor que ya tiene tu imagen de fondo */
+.vitrina-carton-mueble {
+    position: relative;
+    display: grid;
+    /* Crea 4 columnas de tamaño idéntico distribuidas uniformemente */
+    grid-template-columns: repeat(4, 1fr); 
+    /* Espaciado controlado para que los objetos caigan en sus nichos */
+    gap: 25px 20px; 
+    padding: 30px; /* Ajusta este padding para centrar la matriz sobre el fondo */
+}
+
+/* El contenedor individual de cada objeto dentro de la matriz */
+.matriz-item-ranura {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: transparent; /* Totalmente invisible para que se vea el fondo */
+    position: relative;
+}
+
+/* Forzamos a la imagen del objeto a mantener proporciones de ranura */
+.matriz-item-ranura img {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5); /* Sombra para que flote sobre el fondo */
+    transition: transform 0.2s ease;
+}
+
+.matriz-item-ranura img:hover {
+    transform: scale(1.1) rotate(2deg); /* Efecto interactivo al pasar el mouse */
+}
+
+/* El botón de quitar flotante y discreto */
+.btn-quitar-matriz {
+    position: absolute;
+    top: -5px;
+    right: 5px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+/* =========================================================================
    CONTROL DE TAMAÑO Y COBERTURA DE IMÁGENES (DIORAMA MUSEO)
    ========================================================================= */
 
