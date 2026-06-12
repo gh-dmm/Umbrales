@@ -146,32 +146,33 @@ class AplicacionMuseo {
     /**
      * Dibuja los objetos guardados dentro de los estantes de la vitrina en el cuarto de la casa
      */
-    actualizarVitrinaGrafica() {
+    actualizarVistaVitrina() {
         const contenedor = document.getElementById('contenedor-vitrina-items');
         if (!contenedor) return;
 
-        const listaItems = this.inventario.obtenerTodos();
-
-        if (listaItems.length === 0) {
-            contenedor.innerHTML = `<p class="text-dark fst-italic text-center w-100 p-4 m-0 fw-bold">📦 La vitrina está vacía. Recorta objetos en las salas de exploración.</p>`;
+        // Si no hay nada en el inventario, limpiamos el contenedor
+        if (!this.inventario || this.inventario.length === 0) {
+            contenedor.innerHTML = `<div class="text-center text-muted py-5 w-100" style="grid-column: span 4;">La vitrina está vacía.</div>`;
             return;
         }
 
-        contenedor.innerHTML = '';
-        listaItems.forEach(item => {
-            const slot = document.createElement('div');
-            slot.className = "col-6 col-sm-4 col-md-3 text-center mb-3";
-            slot.innerHTML = `
-                <div class="carton-item-slot" onclick="AppMuseo.instanciasTarjetas['${item.key}'].desplegarEnPopup()">
-                    <div class="carton-preview-frame">
-                        <img src="${item.imagen}" class="carton-img-render">
+        let htmlFinal = '';
+
+        // Recorremos el inventario y los inyectamos en las ranuras de la matriz
+        this.inventario.forEach(item => {
+            htmlFinal += `
+                <div class="matriz-item-ranura">
+                    <button class="btn-quitar-matriz" onclick="AppMuseo.removerDeVitrina('${item.origen}', '${item.id}')">&times;</button>
+                    
+                    <img src="${item.UI.imagen}" alt="${item.UI.titulo}" class="objeto-clicker-3d" onclick="window.AppMuseo.instanciasTarjetas['${item.origen}_${item.id}'].desplegarEnPopup()">
+                    
+                    <div class="text-warning small fw-bold text-truncate mt-1 px-1" style="max-width: 120px; text-shadow: 1px 1px 2px black;">
+                        ${item.UI.titulo}
                     </div>
-                    <span class="carton-tag-mini">${item.origen.replace('_', ' ')}</span>
-                    <strong class="carton-text-titulo text-truncate d-block">${item.titulo}</strong>
-                </div>
-            `;
-            contenedor.appendChild(slot);
+                </div>`;
         });
+
+        contenedor.innerHTML = htmlFinal;
     }
 
     ejecutarEnvioAporte() {
