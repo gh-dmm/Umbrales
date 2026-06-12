@@ -323,37 +323,43 @@ class TarjetaAcervo {
     }
 
    async abrirChatGemini() {
-        // SOLUCIÓN ARIA: Quitamos el foco del botón presionado antes de ocultar el modal
+        // 1. Desvinculamos el foco del botón para limpiar alertas ARIA de Bootstrap
         if (document.activeElement) {
             document.activeElement.blur();
         }
 
+        // 2. Cerramos el modal del visor de cartón de forma limpia
         const modalElement = document.getElementById('acervoPopupModal');
         const modalPopup = bootstrap.Modal.getInstance(modalElement);
         if (modalPopup) {
             modalPopup.hide();
         }
 
+        // 3. Inicializamos las cajas de texto de la interfaz
         document.getElementById('modal-titulo-acervo').innerText = `Gemini AI: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
         
         const chatBox = document.getElementById('modal-chat-box');
-        chatBox.innerHTML = `<div class="text-muted">Gemini está analizando el cartón...</div>`;
+        chatBox.innerHTML = `<div class="text-muted">Conectando con la pasarela segura corporativa...</div>`;
 
         const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
         Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
 
         // =========================================================================
-        // TU CREDENCIAL COMPLETA DE ENTORNO (INICIA CON AQ.Ab...)
+        // TU TOKEN DE IDENTIDAD COMPLETO (INICIA CON AQ.Ab...)
         // =========================================================================
-        const API_KEY = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
-        const urlGemini = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+        const AUTH_TOKEN = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
+        
+        // CAMBIO RADICAL DE ENDPOINT: Eliminamos el parámetro '?key=' que causaba el 404
+        const urlGemini = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`;
 
         try {
+            // Enviamos la petición bajo las reglas estrictas de Google Cloud Enterprise
             const response = await fetch(urlGemini, {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${AUTH_TOKEN}` // Inyección oculta segura
                 },
                 body: JSON.stringify({ 
                     contents: [{ parts: [{ text: promptParaGemini }] }] 
@@ -362,10 +368,12 @@ class TarjetaAcervo {
 
             const data = await response.json();
             
+            // Si la cuenta Cloud requiere que habilites la API de lenguaje en tu consola
             if (data.error) {
                 chatBox.innerHTML = `
-                    <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded">
-                        <strong>Fallo de Autenticación Cloud:</strong> ${data.error.message}
+                    <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded small">
+                        <strong>Fallo de Pasarela Cloud:</strong> ${data.error.message}<br>
+                        <span class="text-muted text-xs">Código: ${data.error.code}</span>
                     </div>`;
                 return;
             }
@@ -378,10 +386,11 @@ class TarjetaAcervo {
                 </div>`;
                 
         } catch (error) {
-            chatBox.innerHTML = `<div class="text-danger">Error de enlace asíncrono en el diorama.</div>`;
+            chatBox.innerHTML = `<div class="text-danger font-monospace small">Error de enlace asíncrono en el diorama.</div>`;
             console.error("Detalle del fallo:", error);
         }
         
+        // 4. Desplegamos el cuadro de diálogo de Gemini
         const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
         modalChat.show();
     }
