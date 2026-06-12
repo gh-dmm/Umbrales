@@ -323,41 +323,45 @@ class TarjetaAcervo {
     }
 
   async abrirChatGemini() {
-        // 1. Liberamos el foco ARIA del botón para evitar congelamientos de Bootstrap
+        // 1. Liberamos el foco ARIA del botón para evitar congelamientos de Bootstrap [cite: 1284]
         if (document.activeElement) {
             document.activeElement.blur();
         }
 
-        // 2. Cerramos el modal del visor de cartón de forma limpia
+        // 2. Cerramos el modal del visor de cartón de forma limpia [cite: 1284]
         const modalElement = document.getElementById('acervoPopupModal');
         const modalPopup = bootstrap.Modal.getInstance(modalElement);
         if (modalPopup) {
             modalPopup.hide();
         }
 
-        // 3. Inicializamos las cajas de texto de la interfaz
+        // 3. Inicializamos las cajas de texto de la interfaz [cite: 1071]
         document.getElementById('modal-titulo-acervo').innerText = `Gemini AI Stream: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
         
         const chatBox = document.getElementById('modal-chat-box');
-        chatBox.innerHTML = `<div class="text-muted animate-pulse">Estableciendo puente seguro con Gemini...</div>`;
+        chatBox.innerHTML = `<div class="text-muted">Conectando al entorno estable de producción...</div>`;
 
         const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
         Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}". 
-        Por favor, dame una opinión profesional corta de este registro.`;
+        Por favor, dame una opinión profesional corta de este registro.`; [cite: 1096]
 
         // =========================================================================
-        // TU CREDENCIAL LARGA COMPLETA (AQ.Ab...)
+        // TU CREDENCIAL LARGA COMPLETA (AQ.Ab...) [cite: 1261]
         // =========================================================================
         const CREDENCIAL_AUTH = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
 
         try {
-            // Importamos dinámicamente el SDK unificado oficial de Google AI
+            // Importamos dinámicamente el SDK unificado oficial de Google AI [cite: 1367]
             const { GoogleGenAI } = await import('https://esm.run/@google/genai');
             
-            // CONFIGURACIÓN CORPORATIVA: Pasamos la credencial en el formato estricto
-            // que la infraestructura Cloud de Google exige para mitigar el 401
-            const ai = new GoogleGenAI({ apiKey: CREDENCIAL_AUTH });
+            // =========================================================================
+            // AJUSTE CRÍTICO: Forzamos la apiVersion a 'v1' para que encuentre el modelo estable
+            // =========================================================================
+            const ai = new GoogleGenAI({ 
+                apiKey: CREDENCIAL_AUTH,
+                apiVersion: 'v1' 
+            });
 
             // Limpiamos el contenedor para empezar a recibir las palabras en ráfaga
             chatBox.innerHTML = `
@@ -367,30 +371,29 @@ class TarjetaAcervo {
             
             const targetSpan = document.getElementById('stream-text-target');
 
-            // IMPLEMENTACIÓN DE CAPTURA 2: Flujo de contenido en tiempo real (Streaming)
+            // Flujo de contenido en tiempo real (Streaming) [cite: 1390]
             const responseStream = await ai.models.generateContentStream({
-                model: 'gemini-1.5-flash', // El modelo de producción estable asignado a tu cuota
+                model: 'gemini-1.5-flash', 
                 contents: promptParaGemini,
             });
 
-            // Iteramos de forma asíncrona sobre cada fragmento de texto a medida que llega del servidor
+            // Iteramos sobre los fragmentos de texto conforme llegan 
             for await (const chunk of responseStream) {
                 if (chunk.text) {
                     targetSpan.innerText += chunk.text;
-                    chatBox.scrollTop = chatBox.scrollHeight; // Scroll automático al escribir
+                    chatBox.scrollTop = chatBox.scrollHeight; 
                 }
             }
                 
         } catch (error) {
             chatBox.innerHTML = `
                 <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded small">
-                    <strong>Fallo de Comunicación SDK:</strong> ${error.message}<br>
-                    <span class="text-muted">Si persiste el 401, verifica que tu proyecto de Google Cloud tenga la 'Generative Language API' habilitada.</span>
+                    <strong>Fallo de Comunicación SDK:</strong> ${error.message}
                 </div>`;
-            console.error("Detalle del fallo de inicialización:", error);
+            console.error("Detalle del fallo:", error);
         }
         
-        // 4. Lanzamos el modal limpio de Gemini
+        // 4. Lanzamos el modal limpio de Gemini [cite: 1152]
         const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
         modalChat.show();
     }
