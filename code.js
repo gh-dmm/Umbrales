@@ -322,7 +322,7 @@ class TarjetaAcervo {
         }
     }
 
-   async abrirChatGemini() {
+  async abrirChatGemini() {
         // 1. Desvinculamos el foco del botón para limpiar alertas ARIA de Bootstrap
         if (document.activeElement) {
             document.activeElement.blur();
