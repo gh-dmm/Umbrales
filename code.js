@@ -287,20 +287,26 @@ class TarjetaAcervo {
                 break;
             case 'objetos_externos':
                 this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
-                this.id=fila['id'];
+                
+                // Mapeamos de forma segura el ID desde la fila del Excel si no se sincronizó antes
+                if (fila['id_item'] || fila['id']) {
+                    this.id = parseInt(fila['id_item'] || fila['id']);
+                }
+
+                const archivoImg = fila['imagen'] ? String(fila['imagen']).trim() : '';
+                
+                // REPARACIÓN COMPLETA: Lógica condicional limpia y cerrada correctamente sin fugas de contexto
                 if (archivoImg !== '') {
                     this.UI.imagen = `${prefijoRuta}${archivoImg}`;
                 } else {
-                    // Mapeo dinámico por ID para tus dos objetos externos
                     if (this.id === 1) {
-                        this.UI.imagen = `${prefijoRuta}penacho.jpg`; // Imagen para tu primer objeto (ej. Penacho)
+                        this.UI.imagen = `${prefijoRuta}penacho.jpg`;
                     } else if (this.id === 4) {
-                        this.UI.imagen = `${prefijoRuta}img4.png`;    // Imagen para tu segundo objeto externo
+                        this.UI.imagen = `${prefijoRuta}img4.png`; 
                     } else {
-                        this.UI.imagen = `${prefijoRuta}img5.png`; // Por si en el futuro agregas un tercero
+                        this.UI.imagen = `${prefijoRuta}img5.png`;
                     }
-                const archivoImg = fila['imagen'] ? String(fila['imagen']).trim() : '';
-                this.UI.imagen = archivoImg !== '' ? `${prefijoRuta}${archivoImg}` : `${prefijoRuta}img1.jpg`;
+                }
                 
                 this.UI.linea1 = `📍 Ubicación: ${fila['localizacion'] || 'No especificada'}`; 
                 this.UI.linea2 = `Colección: Objetos Externos del Museo`;
@@ -403,7 +409,7 @@ class TarjetaAcervo {
         const chatBox = document.getElementById('modal-chat-box');
         chatBox.innerHTML = `<div class="text-muted">Gemini analizando la descripción de la pieza...</div>`;
 
-        const promptParaGemini = `Actúas como un curador y auditor expert de bases de datos de museos arqueológicos e históricos.
+        const promptParaGemini = `Actúas como un curador y auditor experto de bases de datos de museos arqueológicos e históricos.
         Estás auditando un registro de la colección [${this.origen}].
         DATOS DE LA INTERFAZ:
         - Nombre/Título de la pieza: "${this.UI.titulo}"
