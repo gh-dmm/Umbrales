@@ -1,122 +1,60 @@
-/**
- * =========================================================================
- * CLASE MAESTRA: AplicacionMuseo (Orquestador Central POO)
- * =========================================================================
- */
+class InventarioCultural {
+    constructor() {
+        this.items = []; 
+    }
+    agregar(key, titulo, origen, imagen) {
+        if (this.existe(key)) return false;
+        this.items.push({ key, titulo, origen, imagen, fecha: new Date().toLocaleString() });
+        return true;
+    }
+    existe(key) {
+        return this.items.some(item => item.key === key);
+    }
+    obtenerTodos() {
+        return this.items;
+    }
+}
+
 class AplicacionMuseo {
-    constructor(contenedorId) {
-        // 1. Inicialización obligatoria de propiedades de la clase
-        this.root = document.getElementById(contenedorId);
-        this.inventarioMemoria = [];
+    constructor() {
         this.instanciasTarjetas = {};
+        this.inventario = new InventarioCultural();
         
-        // 2. Detección automática del entorno (Localhost vs GitHub Pages)
         const esGitHubPages = window.location.hostname.includes('github.io');
         const repoName = esGitHubPages ? window.location.pathname.split('/')[1] : '';
         const baseRuta = esGitHubPages ? `/${repoName}/` : '';
         
-        // 3. Diccionario de rutas enlazado a tu subcarpeta data/ en GitHub
         this.RUTAS_EXCEL = {
-            'inah_museos': `${baseRuta}data/inah_museos.xlsx`,
-            'monumentos': `${baseRuta}data/monumentos.xlsx`,
-            'objetos_externos': `${baseRuta}data/objetos_externos.xlsx`,
-            'solicitudes': `${baseRuta}data/solicitudes.xlsx`
+            'inah_museos': `${baseRuta}data/INAH_museos.xlsx - INAH_museos.csv.csv`,
+            'monumentos': `${baseRuta}data/monumentos.xlsx - monumentos.csv.csv`,
+            'objetos_externos': `${baseRuta}data/Objetos _externos.xlsx - Sheet1.csv`,
+            'solicitudes': `${baseRuta}data/solicitudesTranscript.xlsx - solicitudesTranscript.csv.csv`
         };
 
-        console.log("Rutas de Excel configuradas para el entorno actual:", this.RUTAS_EXCEL);  
-
-        // 4. Disparadores del ciclo de vida del objeto
-        this.inicializarEstructuraBase();
         this.activarEscuchadorGlobal();
-        this.vincularEventosGlobales();
-    } // CORREGIDO: Cierre de llave limpio del constructor
+        this.actualizarVitrinaGrafica(); // Render inicial vacío
+    }
 
-    inicializarEstructuraBase() {
-        this.root.innerHTML = `
-            <div class="container py-5">
-                <h1 class="text-center mb-4 text-warning fw-bold">Entorno Cultural 3D Clicker</h1>
-                <p class="text-center text-muted mb-5">Haz clic directamente sobre los elementos visuales del escenario para auditar el Excel mediante metadatos automáticos.</p>
+    cambiarEscenario(destinoId) {
+        // Buscamos todas las salas declaradas estáticamente en tu HTML
+        const cuartos = document.querySelectorAll('.escenario-cuarto');
+        
+        cuartos.forEach(cuarto => {
+            cuarto.classList.add('d-none');
+        });
 
-                <div class="row justify-content-center gap-4 mb-5" id="escenario-3d-simulado">
-                    <div class="col-auto text-center">
-                        <img src="https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=200&q=80" 
-                             class="objeto-clicker-3d" 
-                             data-id="1" data-origen="inah_museos" data-visor="loteria"
-                             alt="Museo INAH">
-                        <small class="d-block text-muted mt-1">Museo INAH (Clicker)</small>
-                    </div>
+        const cuartoDestino = document.getElementById(`escenario-${destinoId}`);
+        if (cuartoDestino) {
+            cuartoDestino.classList.remove('d-none');
+        }
 
-                    <div class="col-auto text-center">
-                        <img src="https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=200&q=80" 
-                             class="objeto-clicker-3d" 
-                             data-id="2" data-origen="monumentos" data-visor="ficha"
-                             alt="Monumento">
-                        <small class="d-block text-muted mt-1">Monumento Histórico</small>
-                    </div>
-
-                    <div class="col-auto text-center">
-                        <img src="https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=200&q=80" 
-                             class="objeto-clicker-3d" 
-                             data-id="1" data-origen="objetos_externos" data-visor="loteria"
-                             alt="Objeto de Arte">
-                        <small class="d-block text-muted mt-1">Pieza Externa</small>
-                    </div>
-
-                    <div class="col-auto text-center">
-                        <img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?w=200&q=80" 
-                             class="objeto-clicker-3d" 
-                             data-id="1" data-origen="solicitudes" data-visor="ficha"
-                             alt="Manuscrito">
-                        <small class="d-block text-muted mt-1">Documento Antiguo</small>
-                    </div>
-                </div>
-
-                <div id="status-carga" class="text-center mb-4 text-info small fw-bold font-monospace"></div>
-                
-                <div class="inventory-section p-4 rounded mb-5">
-                    <h3 class="text-warning mb-3 border-bottom border-secondary pb-2">🎒 Mi Inventario Cultural (<span id="inv-count">0</span>)</h3>
-                    <div class="row gap-3 justify-content-start" id="inventario-items-container">
-                        <p class="text-muted fst-italic" id="inv-vacio-msg">El inventario está vacío. Toca un objeto del escenario para coleccionarlo.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="acervoPopupModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content bg-transparent border-0 position-relative">
-                        <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">&times;</button>
-                        <div id="popup-visor-body" class="d-flex flex-column align-items-center"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="geminiChatModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered text-dark">
-                    <div class="modal-content bg-light shadow-lg">
-                        <div class="modal-header bg-dark text-white">
-                            <h5 class="modal-title text-warning" id="modal-titulo-acervo">Chat con Gemini</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <input type="hidden" id="modal-instancia-key">
-                            <div id="modal-chat-box" class="p-3 border rounded bg-white mb-3 shadow-inner" style="max-height: 280px; overflow-y: auto;"></div>
-                            <div class="form-group">
-                                <label class="form-label fw-bold text-secondary">Aporta la información faltante para el Excel:</label>
-                                <textarea id="modal-user-text" class="form-control border-secondary" rows="3" placeholder="Escribe los datos históricos aquí..."></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <button type="button" class="btn btn-warning fw-bold" onclick="AppMuseo.ejecutarEnvioAporte()">Escanear con IA</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        if (destinoId === 'casa') {
+            this.actualizarVitrinaGrafica();
+        }
     }
 
     activarEscuchadorGlobal() {
-        this.root.addEventListener('click', (evento) => {
+        document.addEventListener('click', (evento) => {
             const elementoTocado = evento.target;
             if (elementoTocado.classList.contains('objeto-clicker-3d')) {
                 const id = parseInt(elementoTocado.getAttribute('data-id'));
@@ -127,17 +65,8 @@ class AplicacionMuseo {
         });
     }
 
-    vincularEventosGlobales() {
-        window.limpiarTablero = () => {
-            this.inventarioMemoria = [];
-            this.instanciasTarjetas = {};
-            this.inicializarEstructuraBase();
-        };
-    }
-
     solicitarCargaExcel(id, origen, tipoVisor) {
         const key = `${origen}_${id}`;
-        
         if (this.instanciasTarjetas[key]) {
             this.instanciasTarjetas[key].desplegarEnPopup();
             return;
@@ -145,7 +74,7 @@ class AplicacionMuseo {
 
         const rutaArchivo = this.RUTAS_EXCEL[origen];
         const statusDiv = document.getElementById('status-carga');
-        statusDiv.innerText = `Cargando automáticamente desde: ${rutaArchivo}...`;
+        if(statusDiv) statusDiv.innerText = `Abriendo caja de cartón de: ${origen.toUpperCase()}...`;
 
         fetch(rutaArchivo)
             .then(response => {
@@ -155,7 +84,6 @@ class AplicacionMuseo {
             .then(buffer => {
                 const dataBinaria = new Uint8Array(buffer);
                 const libroExcel = XLSX.read(dataBinaria, { type: 'array' });
-                
                 const primeraHojaNombre = libroExcel.SheetNames[0];
                 const hojaCalculoActiva = libroExcel.Sheets[primeraHojaNombre];
                 const filasDeExcelJSON = XLSX.utils.sheet_to_json(hojaCalculoActiva);
@@ -167,16 +95,41 @@ class AplicacionMuseo {
 
                 if (filaEncontrada) {
                     this.instanciasTarjetas[key] = new TarjetaAcervo(id, origen, filaEncontrada, tipoVisor, this);
-                    statusDiv.innerText = `¡Objeto sincronizado con Excel de forma transparente!`;
+                    if(statusDiv) statusDiv.innerText = '';
                     this.instanciasTarjetas[key].desplegarEnPopup();
-                } else {
-                    statusDiv.innerText = `Error: No se localizó el ID ${id} en ${rutaArchivo}.`;
                 }
             })
             .catch(error => {
-                statusDiv.innerText = `Error local: ${error.message}`;
-                console.error(error);
+                if(statusDiv) statusDiv.innerText = `Fallo al jalar datos de las celdas.`;
             });
+    }
+
+    actualizarVitrinaGrafica() {
+        const contenedor = document.getElementById('contenedor-vitrina-items');
+        if (!contenedor) return;
+
+        const listaItems = this.inventario.obtenerTodos();
+
+        if (listaItems.length === 0) {
+            contenedor.innerHTML = `<p class="text-dark fst-italic text-center w-100 p-4 m-0 fw-bold">📦 La vitrina está vacía. Recorta objetos en las Salas de exploración.</p>`;
+            return;
+        }
+
+        contenedor.innerHTML = '';
+        listaItems.forEach(item => {
+            const slot = document.createElement('div');
+            slot.className = "col-6 col-sm-4 col-md-3 text-center mb-3";
+            slot.innerHTML = `
+                <div class="carton-item-slot" onclick="AppMuseo.instanciasTarjetas['${item.key}'].desplegarEnPopup()">
+                    <div class="carton-preview-frame">
+                        <img src="${item.imagen}" class="carton-img-render">
+                    </div>
+                    <span class="carton-tag-mini">${item.origen.replace('_', ' ')}</span>
+                    <strong class="carton-text-titulo text-truncate d-block">${item.titulo}</strong>
+                </div>
+            `;
+            contenedor.appendChild(slot);
+        });
     }
 
     ejecutarEnvioAporte() {
@@ -186,33 +139,20 @@ class AplicacionMuseo {
 
         if (!entradaTexto.trim()) return;
 
-        chatBox.innerHTML += `
-            <div class="p-2 mb-2 bg-white rounded text-dark text-end shadow-sm">
-                <span class="badge bg-secondary mb-1">Tu Registro</span><br>
-                <span>${entradaTexto}</span>
-            </div>
-        `;
-
+        chatBox.innerHTML += `<div class="p-2 mb-2 bg-dark text-white rounded text-end shadow-sm"><span>${entradaTexto}</span></div>`;
         const respuestaValidacion = this.instanciasTarjetas[llaveCompuesta].analizarYActualizarCeldaExcel(entradaTexto);
 
         setTimeout(() => {
             chatBox.innerHTML += `
-                <div class="p-2 mb-2 border border-warning rounded bg-dark text-warning small">
-                    <strong>Gemini Analysis Report:</strong><br>${respuestaValidacion}
-                </div>
-            `;
+                <div class="p-2 mb-2 bg-warning-subtle text-dark border-start border-4 border-warning rounded">
+                    <strong>Gemini AI Report:</strong><br>${respuestaValidacion}
+                </div>`;
             document.getElementById('modal-user-text').value = "";
             chatBox.scrollTop = chatBox.scrollHeight;
         }, 400);
     }
 }
 
-
-/**
- * =========================================================================
- * CLASE HIJA / COMPONENTE: TarjetaAcervo 
- * =========================================================================
- */
 class TarjetaAcervo {
     constructor(id, origen, datosFila, tipoVisor, appMaestra) {
         this.id = id;
@@ -222,63 +162,46 @@ class TarjetaAcervo {
         this.app = appMaestra; 
         this.guardado = false; 
 
-        this.UI = {
-            titulo: '',
-            imagen: '',
-            linea1: '',
-            linea2: '',
-            campoEscaneable: '',
-            nombreColumnaOriginal: ''
-        };
-
+        this.UI = { titulo: '', imagen: '', linea1: '', linea2: '', campoEscaneable: '', nombreColumnaOriginal: '' };
         this.procesarCabecerasExcelEspecificas();
     }
 
-    /**
-     * Mapeo corregido basándose en las columnas reales de tus archivos Excel subidos
-     */
     procesarCabecerasExcelEspecificas() {
         const fila = this.datosOriginales;
-
         switch (this.origen) {
             case 'inah_museos':
                 this.UI.titulo = fila['nombre'] || "Museo INAH";
-                this.UI.imagen = "https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=400&q=80";
-                this.UI.linea1 = `Estado: ${fila['estado'] || 'No especificado'}`;
-                this.UI.linea2 = `Municipio: ${fila['municipio_localidad'] || 'No especificado'}`;
-                this.UI.nombreColumnaOriginal = 'condicion'; // Campo propenso a auditar
+                this.UI.imagen = "https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=200&q=80";
+                this.UI.linea1 = `Estado: ${fila['estado'] || 'N/A'}`;
+                this.UI.linea2 = `Municipio: ${fila['municipio_localidad'] || 'N/A'}`;
+                this.UI.nombreColumnaOriginal = 'condicion'; 
                 break;
-
             case 'monumentos':
-                this.UI.titulo = fila['nombre_actual'] || "Monumento Histórico";
-                this.UI.imagen = "https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=400&q=80";
+                this.UI.titulo = fila['nombre_actual'] || "Monumento";
+                this.UI.imagen = "https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=200&q=80";
                 this.UI.linea1 = `Tipo: ${fila['tipo_monumento'] || 'Inmueble'}`;
                 this.UI.linea2 = `Entidad: ${fila['entidad_federativa'] || 'N/D'}`;
-                this.UI.nombreColumnaOriginal = 'nombre_original'; // Columna propensa a decir "sin dato"
+                this.UI.nombreColumnaOriginal = 'nombre_original'; 
                 break;
-
             case 'objetos_externos':
-                this.UI.titulo = fila['objeto'] || "Pieza Externa";
-                this.UI.imagen = "https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=400&q=80";
-                this.UI.linea1 = `ID Objeto: ${this.id}`;
-                this.UI.linea2 = `Tipo: Elemento Cultural`;
-                this.UI.nombreColumnaOriginal = 'descripcion'; // Tu tabla Objetos_externos tiene id, objeto, descripcion
+                this.UI.titulo = fila['objeto'] || "Pieza";
+                this.UI.imagen = "https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=200&q=80";
+                this.UI.linea1 = `ID: ${this.id}`;
+                this.UI.linea2 = `Colección Cultural`;
+                this.UI.nombreColumnaOriginal = 'descripcion'; 
                 break;
-
             case 'solicitudes':
-                this.UI.titulo = fila['asunto'] || "Solicitud de Transcripción";
+                this.UI.titulo = fila['asunto'] || "Solicitud";
                 this.UI.imagen = "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80";
                 this.UI.linea1 = `Ingreso: ${fila['fecha_ingreso'] || 'N/A'}`;
-                this.UI.linea2 = `Volumen: ${fila['total'] || 'No especificado'}`;
-                this.UI.nombreColumnaOriginal = 'observaciones'; // Tus solicitudes tienen observaciones al final
+                this.UI.linea2 = `Volumen: ${fila['total'] || 'N/A'}`;
+                this.UI.nombreColumnaOriginal = 'observaciones'; 
                 break;
         }
 
-        // Recuperar y limpiar el valor de la celda auditada
         const valorCelda = fila[this.UI.nombreColumnaOriginal];
         this.UI.campoEscaneable = (valorCelda !== undefined && valorCelda !== null) ? String(valorCelda).trim() : "sin informacion";
 
-        // Adaptamos el filtro de detección a los valores "sin dato" de tus Excel reales
         if (this.UI.campoEscaneable === '' || this.UI.campoEscaneable.toLowerCase() === 'sin dato') {
             this.UI.campoEscaneable = "sin informacion";
         }
@@ -286,163 +209,115 @@ class TarjetaAcervo {
 
     desplegarEnPopup() {
         const visorContainer = document.getElementById('popup-visor-body');
+        const keyCompuesta = `${this.origen}_${this.id}`;
         
         let diseñoHTML = '';
         if (this.tipoVisor === 'loteria') {
             diseñoHTML = `
-                <div class="loteria-card-container" onclick="this.classList.toggle('flipped')">
-                    <div class="loteria-card">
-                        <div class="front text-white p-3">
-                            <div>
-                                <h3 class="text-warning fw-bold m-0">LOTERÍA</h3>
-                                <p class="text-uppercase small text-muted tracking-wider">${this.origen.replace('_', ' ')}</p>
-                                <span class="badge bg-warning text-dark">PK ID: ${this.id}</span>
-                            </div>
+                <div class="carton-loteria-card" onclick="this.classList.toggle('flipped')">
+                    <div class="loteria-card-inner">
+                        <div class="card-front-carton">
+                            <h3 class="fw-bold m-0 text-dark">LOTERÍA</h3>
+                            <p class="small text-muted m-0">${this.origen.toUpperCase()}</p>
+                            <span class="badge bg-dark mt-2">ID: ${this.id}</span>
                         </div>
-                        <div class="back rounded overflow-hidden">
-                            <img src="${this.UI.imagen}" class="w-100 h-100" style="object-fit: cover;">
-                            <div class="loteria-title">${this.UI.titulo}</div>
+                        <div class="card-back-carton">
+                            <img src="${this.UI.imagen}" class="w-100 h-100 object-fit-cover rounded">
+                            <div class="carton-card-label">${this.UI.titulo}</div>
                         </div>
                     </div>
                 </div>
             `;
         } else if (this.tipoVisor === 'ficha') {
             diseñoHTML = `
-                <div class="card bg-dark text-white border-secondary" style="width: 240px; border-radius: 12px;">
-                    <img src="${this.UI.imagen}" class="card-img-top" style="height: 140px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">
-                    <div class="card-body d-flex flex-column justify-content-between" style="padding: 12px;">
-                        <div>
-                            <span class="badge bg-warning text-dark mb-2 font-monospace" style="font-size:0.65rem;">${this.origen.toUpperCase()}</span>
-                            <h6 class="card-title text-warning fw-bold mb-1">${this.UI.titulo}</h6>
-                            <p class="card-text text-muted mb-2" style="font-size: 0.75rem; line-height:1.3;">
-                                ${this.UI.linea1}<br>${this.UI.linea2}
-                            </p>
-                        </div>
-                        <div class="border-top border-secondary pt-2">
-                            <label class="text-warning fw-bold m-0" style="font-size:0.65rem; display:block;">CELDA ACTUAL EXCEL:</label>
-                            <span id="dom-excel-${this.origen}-${this.id}" class="text-light font-monospace break-word" style="font-size: 0.75rem;">
-                                ${this.UI.campoEscaneable}
-                            </span>
-                        </div>
+                <div class="carton-ficha-technical">
+                    <img src="${this.UI.imagen}" class="w-100 rounded mb-2" style="height:120px; object-fit:cover;">
+                    <h5 class="fw-bold text-dark m-0">${this.UI.titulo}</h5>
+                    <p class="text-muted small my-1">${this.UI.linea1}<br>${this.UI.linea2}</p>
+                    <div class="border-top border-secondary pt-2 mt-2 font-monospace small text-start">
+                        <strong>EXCEL CELL:</strong><br>
+                        <span id="dom-excel-${this.origen}-${this.id}">${this.UI.campoEscaneable}</span>
                     </div>
                 </div>
             `;
         }
 
-        const txtBotonInventario = this.guardado ? "🎒 Guardado en Inventario" : "📥 Guardar en Inventario";
-        const claseBotonInventario = this.guardado ? "btn-secondary disabled" : "btn-success";
+        const estaGuardado = this.app.inventario.existe(keyCompuesta);
+        const txtBtn = estaGuardado ? "🎒 Guardado en Vitrina" : "📥 Guardar en Vitrina";
+        const claseBtn = estaGuardado ? "btn-secondary disabled" : "btn-warning text-dark border-dark";
 
         const barraAcciones = `
-            <div class="w-100 d-flex flex-column gap-2 mt-3" style="max-width: 240px;">
-                <button class="btn ${claseBotonInventario} btn-sm fw-bold shadow" id="btn-inv-${this.origen}-${this.id}" onclick="AppMuseo.instanciasTarjetas['${this.origen}_${this.id}'].inyectarAInventario()">
-                    ${txtBotonInventario}
+            <div class="w-100 d-flex flex-column gap-2 mt-3" style="max-width:240px;">
+                <button class="btn ${claseBtn} btn-sm fw-bold" id="btn-inv-${this.origen}-${this.id}" onclick="AppMuseo.instanciasTarjetas['${this.origen}_${this.id}'].inyectarAVitrina()">
+                    ${txtBtn}
                 </button>
-                <button class="btn btn-outline-warning btn-sm fw-bold shadow" onclick="AppMuseo.instanciasTarjetas['${this.origen}_${this.id}'].abrirChatGemini()">
+                <button class="btn btn-dark text-warning border-warning btn-sm fw-bold" onclick="AppMuseo.instanciasTarjetas['${this.origen}_${this.id}'].abrirChatGemini()">
                     🗣️ Gemini AI Chat
                 </button>
             </div>
         `;
 
         visorContainer.innerHTML = diseñoHTML + barraAcciones;
-
         const modalPopup = new bootstrap.Modal(document.getElementById('acervoPopupModal'));
         modalPopup.show();
     }
 
-    inyectarAInventario() {
-        if (this.guardado) return;
+    inyectarAVitrina() {
+        const keyCompuesta = `${this.origen}_${this.id}`;
+        const exito = this.app.inventario.agregar(keyCompuesta, this.UI.titulo, this.origen, this.UI.imagen);
 
-        this.guardado = true;
-        
-        this.app.inventarioMemoria.push({
-            key: `${this.origen}_${this.id}`,
-            titulo: this.UI.titulo,
-            origen: this.origen
-        });
-
-        const btnInV = document.getElementById(`btn-inv-${this.origen}-${this.id}`);
-        if(btnInV) {
-            btnInV.innerText = "🎒 Guardado en Inventario";
-            btnInV.className = "btn btn-secondary btn-sm fw-bold shadow disabled";
+        if (exito) {
+            const btnInV = document.getElementById(`btn-inv-${this.origen}-${this.id}`);
+            if(btnInV) {
+                btnInV.innerText = "🎒 Guardado en Vitrina";
+                btnInV.className = "btn btn-secondary btn-sm fw-bold disabled";
+            }
         }
-
-        this.actualizarUIInventario();
     }
 
-    actualizarUIInventario() {
-        const cajaInventario = document.getElementById('inventario-items-container');
-        const mensajeVacio = document.getElementById('inv-vacio-msg');
-        const contador = document.getElementById('inv-count');
-
-        if(mensajeVacio) mensajeVacio.remove();
-        contador.innerText = this.app.inventarioMemoria.length;
-
-        cajaInventario.innerHTML = '';
-        this.app.inventarioMemoria.forEach(item => {
-            const chip = document.createElement('div');
-            chip.className = "col-auto inventory-chip animate-fade-in";
-            chip.innerHTML = `
-                <div onclick="AppMuseo.instanciasTarjetas['${item.key}'].desplegarEnPopup()">
-                    <span class="badge bg-warning text-dark me-1" style="font-size:0.6rem;">${item.origen.toUpperCase()}</span>
-                    <strong class="text-white small d-block text-truncate" style="max-width:140px;">${item.titulo}</strong>
-                </div>
-            `;
-            cajaInventario.appendChild(chip);
-        });
-    }
-
-    // CORREGIDO: Organización y cierre asíncrono limpio de llaves para el chat de Gemini
     async abrirChatGemini() {
         const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
         if(modalPopup) modalPopup.hide();
 
-        document.getElementById('modal-titulo-acervo').innerText = `Gemini AI Engine: ${this.UI.titulo}`;
+        document.getElementById('modal-titulo-acervo').innerText = `Gemini AI: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
         
         const chatBox = document.getElementById('modal-chat-box');
-        chatBox.innerHTML = `<div class="text-muted">Gemini está pensando...</div>`;
+        chatBox.innerHTML = `<div class="text-muted">Gemini está analizando el cartón...</div>`;
 
         const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
-        Atributos: ${this.UI.linea1} | ${this.UI.linea2}. 
-        El campo escaneable actual dice: "${this.UI.campoEscaneable}". 
-        Por favor, dame una opinión profesional de este registro.`;
+        Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
 
         try {
             const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptParaGemini }] }]
-                })
+                body: JSON.stringify({ contents: [{ parts: [{ text: promptParaGemini }] }] })
             });
-
             const data = await response.json();
             const respuestaIA = data.candidates[0].content.parts[0].text;
 
             chatBox.innerHTML = `
-                <div class="p-2 mb-2 bg-light rounded text-dark border-start border-4 border-success">
-                    <span class="badge bg-success mb-1">Gemini AI Real Response</span><br>
+                <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
                     <span>${respuestaIA}</span>
-                </div>
-            `;
+                </div>`;
         } catch (error) {
-            chatBox.innerHTML = `<div class="text-danger">Error al conectar con Gemini.</div>`;
+            chatBox.innerHTML = `<div class="text-danger">Error de enlace.</div>`;
         }
-    } // Llave de cierre asíncrono arreglada
+        
+        new bootstrap.Modal(document.getElementById('geminiChatModal')).show();
+    }
 
     analizarYActualizarCeldaExcel(textoUsuario) {
         if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
             if (textoUsuario.trim().length > 3) {
                 this.UI.campoEscaneable = textoUsuario;
                 this.datosOriginales[this.UI.nombreColumnaOriginal] = textoUsuario;
-                
                 const elemExcel = document.getElementById(`dom-excel-${this.origen}-${this.id}`);
                 if (elemExcel) elemExcel.innerText = textoUsuario;
-
-                return `Análisis Sintáctico Exitoso. Detecté la bandera vacía en la columna [${this.UI.nombreColumnaOriginal}]. Tu aporte fue integrado en la fila correspondiente al ID ${this.id} dentro del libro de cálculo en ejecución.`;
+                return `Análisis Sintáctico Exitoso. Parchado en el Excel.`;
             }
-            return "Aporte descartado: La información suministrada es insuficiente o demasiado corta.";
         }
-        return `Acción bloqueada. La columna de Excel [${this.UI.nombreColumnaOriginal}] ya cuenta con un registro sólido de base.`;
+        return `Celda ya protegida con registros sólidos.`;
     }
 }
