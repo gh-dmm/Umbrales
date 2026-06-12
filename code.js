@@ -1,29 +1,46 @@
+/**
+ * =========================================================================
+ * CLASE: InventarioCultural (Manejo de Datos y Conexión con la Vitrina)
+ * =========================================================================
+ */
 class InventarioCultural {
     constructor() {
         this.items = []; 
     }
+
     agregar(key, titulo, origen, imagen) {
         if (this.existe(key)) return false;
         this.items.push({ key, titulo, origen, imagen, fecha: new Date().toLocaleString() });
+        console.log(`🎒 [Inventario de Cartón] Item recolectado: ${titulo}`);
         return true;
     }
+
     existe(key) {
         return this.items.some(item => item.key === key);
     }
+
     obtenerTodos() {
         return this.items;
     }
 }
 
+/**
+ * =========================================================================
+ * CLASE MAESTRA: AplicacionMuseo (Controlador de Escenarios del HTML)
+ * =========================================================================
+ */
 class AplicacionMuseo {
     constructor() {
+        // 1. Inicialización de la memoria e instancias
         this.instanciasTarjetas = {};
         this.inventario = new InventarioCultural();
         
+        // 2. Detección automática del entorno (Localhost vs GitHub Pages)
         const esGitHubPages = window.location.hostname.includes('github.io');
         const repoName = esGitHubPages ? window.location.pathname.split('/')[1] : '';
         const baseRuta = esGitHubPages ? `/${repoName}/` : '';
         
+        // 3. Tus archivos de Excel reales mapeados letra por letra
         this.RUTAS_EXCEL = {
             'inah_museos': `${baseRuta}data/INAH_museos.xlsx - INAH_museos.csv.csv`,
             'monumentos': `${baseRuta}data/monumentos.xlsx - monumentos.csv.csv`,
@@ -31,28 +48,44 @@ class AplicacionMuseo {
             'solicitudes': `${baseRuta}data/solicitudesTranscript.xlsx - solicitudesTranscript.csv.csv`
         };
 
+        console.log("📦 [Cartón Engine] Inicializado. Rutas listas:", this.RUTAS_EXCEL);  
+
+        // 4. Activamos los escuchadores automáticos de clicks
         this.activarEscuchadorGlobal();
         this.actualizarVitrinaGrafica(); // Render inicial vacío
     }
 
+    /**
+     * MÁQUINA DE ESTADOS REACTIVA:
+     * Oculta y muestra los contenedores que tú ya declaraste manualmente en tu HTML
+     */
     cambiarEscenario(destinoId) {
-        // Buscamos todas las salas declaradas estáticamente en tu HTML
+        // Buscamos todas las capas de escenarios en tu HTML
         const cuartos = document.querySelectorAll('.escenario-cuarto');
         
+        // Ocultamos todas
         cuartos.forEach(cuarto => {
             cuarto.classList.add('d-none');
         });
 
+        // Mostramos el cuarto específico seleccionado por el botón del HTML
         const cuartoDestino = document.getElementById(`escenario-${destinoId}`);
         if (cuartoDestino) {
             cuartoDestino.classList.remove('d-none');
+            console.log(`🚶 Desplazamiento multidireccional hacia: escenario-${destinoId}`);
+        } else {
+            console.warn(`[Error de Escenario] No existe un contenedor con ID: escenario-${destinoId}`);
         }
 
+        // Si el usuario decidió entrar a la casa, forzamos actualización de la vitrina
         if (destinoId === 'casa') {
             this.actualizarVitrinaGrafica();
         }
     }
 
+    /**
+     * Captura de clicks inteligente en imágenes del diorama
+     */
     activarEscuchadorGlobal() {
         document.addEventListener('click', (evento) => {
             const elementoTocado = evento.target;
@@ -65,6 +98,9 @@ class AplicacionMuseo {
         });
     }
 
+    /**
+     * Lector asíncrono SheetJS para tus archivos de Excel
+     */
     solicitarCargaExcel(id, origen, tipoVisor) {
         const key = `${origen}_${id}`;
         if (this.instanciasTarjetas[key]) {
@@ -74,7 +110,7 @@ class AplicacionMuseo {
 
         const rutaArchivo = this.RUTAS_EXCEL[origen];
         const statusDiv = document.getElementById('status-carga');
-        if(statusDiv) statusDiv.innerText = `Abriendo caja de cartón de: ${origen.toUpperCase()}...`;
+        if(statusDiv) statusDiv.innerText = `Abriendo caja de cartón: ${origen.toUpperCase()}...`;
 
         fetch(rutaArchivo)
             .then(response => {
@@ -97,13 +133,19 @@ class AplicacionMuseo {
                     this.instanciasTarjetas[key] = new TarjetaAcervo(id, origen, filaEncontrada, tipoVisor, this);
                     if(statusDiv) statusDiv.innerText = '';
                     this.instanciasTarjetas[key].desplegarEnPopup();
+                } else {
+                    if(statusDiv) statusDiv.innerText = `Error: ID ${id} no encontrado en Excel.`;
                 }
             })
             .catch(error => {
                 if(statusDiv) statusDiv.innerText = `Fallo al jalar datos de las celdas.`;
+                console.error(error);
             });
     }
 
+    /**
+     * Dibuja los objetos guardados dentro de los estantes de la vitrina en el cuarto de la casa
+     */
     actualizarVitrinaGrafica() {
         const contenedor = document.getElementById('contenedor-vitrina-items');
         if (!contenedor) return;
@@ -111,7 +153,7 @@ class AplicacionMuseo {
         const listaItems = this.inventario.obtenerTodos();
 
         if (listaItems.length === 0) {
-            contenedor.innerHTML = `<p class="text-dark fst-italic text-center w-100 p-4 m-0 fw-bold">📦 La vitrina está vacía. Recorta objetos en las Salas de exploración.</p>`;
+            contenedor.innerHTML = `<p class="text-dark fst-italic text-center w-100 p-4 m-0 fw-bold">📦 La vitrina está vacía. Recorta objetos en las salas de exploración.</p>`;
             return;
         }
 
@@ -153,6 +195,11 @@ class AplicacionMuseo {
     }
 }
 
+/**
+ * =========================================================================
+ * CLASE COMPONENTE: TarjetaAcervo
+ * =========================================================================
+ */
 class TarjetaAcervo {
     constructor(id, origen, datosFila, tipoVisor, appMaestra) {
         this.id = id;
@@ -171,21 +218,21 @@ class TarjetaAcervo {
         switch (this.origen) {
             case 'inah_museos':
                 this.UI.titulo = fila['nombre'] || "Museo INAH";
-                this.UI.imagen = "https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=200&q=80";
+                this.UI.imagen = "https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=400&q=80";
                 this.UI.linea1 = `Estado: ${fila['estado'] || 'N/A'}`;
                 this.UI.linea2 = `Municipio: ${fila['municipio_localidad'] || 'N/A'}`;
                 this.UI.nombreColumnaOriginal = 'condicion'; 
                 break;
             case 'monumentos':
                 this.UI.titulo = fila['nombre_actual'] || "Monumento";
-                this.UI.imagen = "https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=200&q=80";
+                this.UI.imagen = "https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=400&q=80";
                 this.UI.linea1 = `Tipo: ${fila['tipo_monumento'] || 'Inmueble'}`;
                 this.UI.linea2 = `Entidad: ${fila['entidad_federativa'] || 'N/D'}`;
                 this.UI.nombreColumnaOriginal = 'nombre_original'; 
                 break;
             case 'objetos_externos':
                 this.UI.titulo = fila['objeto'] || "Pieza";
-                this.UI.imagen = "https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=200&q=80";
+                this.UI.imagen = "https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=400&q=80";
                 this.UI.linea1 = `ID: ${this.id}`;
                 this.UI.linea2 = `Colección Cultural`;
                 this.UI.nombreColumnaOriginal = 'descripcion'; 
@@ -270,7 +317,7 @@ class TarjetaAcervo {
             const btnInV = document.getElementById(`btn-inv-${this.origen}-${this.id}`);
             if(btnInV) {
                 btnInV.innerText = "🎒 Guardado en Vitrina";
-                btnInV.className = "btn btn-secondary btn-sm fw-bold disabled";
+                btnInV.className = "btn btn-secondary btn-sm fw-bold shadow disabled";
             }
         }
     }
@@ -289,7 +336,7 @@ class TarjetaAcervo {
         Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
 
         try {
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw', {
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: promptParaGemini }] }] })
