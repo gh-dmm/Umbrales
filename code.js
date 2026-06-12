@@ -231,11 +231,16 @@ class TarjetaAcervo {
                 this.UI.nombreColumnaOriginal = 'nombre_original'; 
                 break;
             case 'objetos_externos':
-                this.UI.titulo = fila['objeto'] || "Pieza";
+                // 1. TÍTULO: Lee la columna 'nombre'
+                this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
                 this.UI.imagen = "https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=400&q=80";
-                this.UI.linea1 = `ID: ${this.id}`;
-                this.UI.linea2 = `Colección Cultural`;
-                this.UI.nombreColumnaOriginal = 'descripcion'; 
+                
+                // 2. INTERFAZ: Mostramos la localización de forma destacada en la tarjeta de cartón
+                this.UI.linea1 = `📍 Ubicación: ${fila['localizacion'] || 'No especificada'}`; 
+                this.UI.linea2 = `Colección: Objetos Externos del Museo`;
+                
+                // 3. CAMPO ESCANEABLE: Apuntamos a 'descripcion' para que sea la materia prima de Gemini
+                this.UI.nombreColumnaOriginal = 'descripcion';
                 break;
             case 'solicitudes':
                 this.UI.titulo = fila['asunto'] || "Solicitud";
