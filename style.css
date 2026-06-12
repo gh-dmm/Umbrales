@@ -15,7 +15,7 @@ body {
     position: relative;
     display: grid;
     /* Crea 4 columnas de tamaño idéntico distribuidas uniformemente */
-    grid-template-columns: repeat(4, 1fr); 
+    grid-template-columns: repeat(2, 1fr); 
     /* Espaciado controlado para que los objetos caigan en sus nichos */
     gap: 25px 20px; 
     padding: 30px; /* Ajusta este padding para centrar la matriz sobre el fondo */
