@@ -5,14 +5,38 @@
  */
 class InventarioCultural {
     constructor() {
-        this.items = []; 
+        this.items = this.cargarInventarioDeLocalStorage(); 
     }
 
-    agregar(key, titulo, origen, imagen) {
+    cargarInventarioDeLocalStorage() {
+        try {
+            const datosGuardados = localStorage.getItem('inventario_museo');
+            if (!datosGuardados) return [];
+            const arregloParseado = JSON.parse(datosGuardados);
+            return Array.isArray(arregloParseado) ? arregloParseado : [];
+        } catch (error) {
+            console.error("Error al leer LocalStorage:", error);
+            return [];
+        }
+    }
+
+    guardarEnLocalStorage() {
+        localStorage.setItem('inventario_museo', JSON.stringify(this.items));
+    }
+
+    agregar(key, id, titulo, origen, imagen) {
         if (this.existe(key)) return false;
-        this.items.push({ key, titulo, origen, imagen, fecha: new Date().toLocaleString() });
-        console.log(`🎒 [Inventario de Cartón] Item recolectado: ${titulo}`);
+        this.items.push({ key, id, titulo, origen, imagen, fecha: new Date().toLocaleString() });
+        this.guardarEnLocalStorage();
+        console.log(`🎒 [Inventario] Item recolectado: ${titulo}`);
         return true;
+    }
+
+    remover(origen, id) {
+        const keyBusqueda = `${origen}_${id}`;
+        this.items = this.items.filter(item => item.key !== keyBusqueda);
+        this.guardarEnLocalStorage();
+        console.log(`🗑️ Item removido de la vitrina: ${keyBusqueda}`);
     }
 
     existe(key) {
@@ -52,7 +76,7 @@ class AplicacionMuseo {
 
         // 4. Activamos los escuchadores automáticos de clicks
         this.activarEscuchadorGlobal();
-        this.actualizarVistaVitrina(); // Render inicial vacío
+        this.actualizarVistaVitrina(); // Render inicial con LocalStorage
     }
 
     /**
@@ -60,15 +84,12 @@ class AplicacionMuseo {
      * Oculta y muestra los contenedores que tú ya declaraste manualmente en tu HTML
      */
     cambiarEscenario(destinoId) {
-        // Buscamos todas las capas de escenarios en tu HTML
         const cuartos = document.querySelectorAll('.escenario-cuarto');
         
-        // Ocultamos todas
         cuartos.forEach(cuarto => {
             cuarto.classList.add('d-none');
         });
 
-        // Mostramos el cuarto específico seleccionado por el botón del HTML
         const cuartoDestino = document.getElementById(`escenario-${destinoId}`);
         if (cuartoDestino) {
             cuartoDestino.classList.remove('d-none');
@@ -77,15 +98,12 @@ class AplicacionMuseo {
             console.warn(`[Error de Escenario] No existe un contenedor con ID: escenario-${destinoId}`);
         }
 
-        // Si el usuario decidió entrar a la casa, forzamos actualización de la vitrina
+        // CORRECCIÓN: Apunta al nombre exacto de tu método de renderizado
         if (destinoId === 'casa') {
-            this.actualizarVitrinaGrafica();
+            this.actualizarVistaVitrina();
         }
     }
 
-    /**
-     * Captura de clicks inteligente en imágenes del diorama
-     */
     activarEscuchadorGlobal() {
         document.addEventListener('click', (evento) => {
             const elementoTocado = evento.target;
@@ -98,9 +116,6 @@ class AplicacionMuseo {
         });
     }
 
-    /**
-     * Lector asíncrono SheetJS para tus archivos de Excel
-     */
     solicitarCargaExcel(id, origen, tipoVisor) {
         const key = `${origen}_${id}`;
         if (this.instanciasTarjetas[key]) {
@@ -150,29 +165,46 @@ class AplicacionMuseo {
         const contenedor = document.getElementById('contenedor-vitrina-items');
         if (!contenedor) return;
 
-        // Si no hay nada en el inventario, limpiamos el contenedor
-        if (!this.inventario || this.inventario.length === 0) {
+        const listaItems = this.inventario.obtainTodos ? this.inventario.obtainTodos() : this.inventario.obtenerTodos();
+
+        // CORRECCIÓN: Leemos de la lista interna devuelta por la clase InventarioCultural
+        if (!listaItems || listaItems.length === 0) {
             contenedor.innerHTML = `<div class="text-center text-muted py-5 w-100" style="grid-column: span 4;">La vitrina está vacía.</div>`;
             return;
         }
 
         let htmlFinal = '';
 
-        // Recorremos el inventario y los inyectamos en las ranuras de la matriz
-        this.inventario.forEach(item => {
+        // Recorremos el listado encapsulado de forma segura
+        listaItems.forEach(item => {
             htmlFinal += `
                 <div class="matriz-item-ranura">
                     <button class="btn-quitar-matriz" onclick="AppMuseo.removerDeVitrina('${item.origen}', '${item.id}')">&times;</button>
                     
-                    <img src="${item.UI.imagen}" alt="${item.UI.titulo}" class="objeto-clicker-3d" onclick="window.AppMuseo.instanciasTarjetas['${item.origen}_${item.id}'].desplegarEnPopup()">
+                    <img src="${item.imagen}" alt="${item.titulo}" class="objeto-clicker-3d" onclick="window.AppMuseo.instanciasTarjetas['${item.origen}_${item.id}'].desplegarEnPopup()">
                     
                     <div class="text-warning small fw-bold text-truncate mt-1 px-1" style="max-width: 120px; text-shadow: 1px 1px 2px black;">
-                        ${item.UI.titulo}
+                        ${item.titulo}
                     </div>
                 </div>`;
         });
 
         contenedor.innerHTML = htmlFinal;
+    }
+
+    // CORRECCIÓN: Añadido método puente que vincula los clicks del HTML con la clase Inventario
+    removerDeVitrina(origen, id) {
+        this.inventario.remover(origen, id);
+        this.actualiazarBotonPopupEnCaliente(origen, id); // Actualiza si la tarjeta está abierta
+        this.actualizarVistaVitrina(); // Re-renderiza el Grid invisible
+    }
+
+    actualiazarBotonPopupEnCaliente(origen, id) {
+        const btnInV = document.getElementById(`btn-inv-${origen}-${id}`);
+        if (btnInV) {
+            btnInV.innerText = "📥 Guardar en Vitrina";
+            btnInV.className = "btn btn-warning text-dark border-dark btn-sm fw-bold";
+        }
     }
 
     ejecutarEnvioAporte() {
@@ -219,33 +251,31 @@ class TarjetaAcervo {
         switch (this.origen) {
             case 'inah_museos':
                 this.UI.titulo = fila['nombre'] || "Museo INAH";
-                this.UI.imagen = "https://images.unsplash.com/photo-1566121318318-7fba26543b35?w=400&q=80";
+                this.UI.imagen = "img/museo_regional.jpg";
                 this.UI.linea1 = `Estado: ${fila['estado'] || 'N/A'}`;
                 this.UI.linea2 = `Municipio: ${fila['municipio_localidad'] || 'N/A'}`;
                 this.UI.nombreColumnaOriginal = 'condicion'; 
                 break;
             case 'monumentos':
                 this.UI.titulo = fila['nombre_actual'] || "Monumento";
-                this.UI.imagen = "https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=400&q=80";
+                this.UI.imagen = "img/acueducto.jpg";
                 this.UI.linea1 = `Tipo: ${fila['tipo_monumento'] || 'Inmueble'}`;
                 this.UI.linea2 = `Entidad: ${fila['entidad_federativa'] || 'N/D'}`;
                 this.UI.nombreColumnaOriginal = 'nombre_original'; 
                 break;
             case 'objetos_externos':
-                // 1. TÍTULO: Lee la columna 'nombre'
                 this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
-                this.UI.imagen = "https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=400&q=80";
                 
-                // 2. INTERFAZ: Mostramos la localización de forma destacada en la tarjeta de cartón
+                const archivoImg = fila['imagen'] ? String(fila['imagen']).trim() : '';
+                this.UI.imagen = archivoImg !== '' ? `img/${archivoImg}` : "img/penacho.jpg";
+                
                 this.UI.linea1 = `📍 Ubicación: ${fila['localizacion'] || 'No especificada'}`; 
                 this.UI.linea2 = `Colección: Objetos Externos del Museo`;
-                
-                // 3. CAMPO ESCANEABLE: Apuntamos a 'descripcion' para que sea la materia prima de Gemini
                 this.UI.nombreColumnaOriginal = 'descripcion';
                 break;
             case 'solicitudes':
                 this.UI.titulo = fila['asunto'] || "Solicitud";
-                this.UI.imagen = "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80";
+                this.UI.imagen = "img/transcripcion.jpg";
                 this.UI.linea1 = `Ingreso: ${fila['fecha_ingreso'] || 'N/A'}`;
                 this.UI.linea2 = `Volumen: ${fila['total'] || 'N/A'}`;
                 this.UI.nombreColumnaOriginal = 'observaciones'; 
@@ -317,7 +347,7 @@ class TarjetaAcervo {
 
     inyectarAVitrina() {
         const keyCompuesta = `${this.origen}_${this.id}`;
-        const exito = this.app.inventario.agregar(keyCompuesta, this.UI.titulo, this.origen, this.UI.imagen);
+        const exito = this.app.inventario.agregar(keyCompuesta, this.id, this.UI.titulo, this.origen, this.UI.imagen);
 
         if (exito) {
             const btnInV = document.getElementById(`btn-inv-${this.origen}-${this.id}`);
@@ -328,8 +358,11 @@ class TarjetaAcervo {
         }
     }
 
- async abrirChatGemini() {
-        // ... (Mantienes tus líneas iniciales de remover foco y ocultar modal igual) ...
+    async abrirChatGemini() {
+        if (document.activeElement) document.activeElement.blur();
+        const modalElement = document.getElementById('acervoPopupModal');
+        const modalPopup = bootstrap.Modal.getInstance(modalElement);
+        if (modalPopup) modalPopup.hide();
 
         document.getElementById('modal-titulo-acervo').innerText = `Auditoría de Ficha: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
@@ -337,48 +370,33 @@ class TarjetaAcervo {
         const chatBox = document.getElementById('modal-chat-box');
         chatBox.innerHTML = `<div class="text-muted">Gemini analizando la descripción de la pieza...</div>`;
 
-        // =========================================================================
-        // NUEVO PROMPT: Directivas estrictas para evitar respuestas genéricas
-        // =========================================================================
         const promptParaGemini = `Actúas como un curador y auditor experto de bases de datos de museos arqueológicos e históricos.
-        
         Estás auditando un registro de la colección [${this.origen}].
         DATOS DE LA INTERFAZ:
         - Nombre/Título de la pieza: "${this.UI.titulo}"
         - ${this.UI.linea1}
-        
         DESCRIPCIÓN EN EL CAMPO ESCANEABLE DE EXCEL:
         "${this.UI.campoEscaneable}"
-        
         INSTRUCCIONES ESTRICTAS DE RESPUESTA:
         1. NO te limites a decir de forma genérica que "falta información" o que el registro está incompleto.
         2. Analiza el texto de la descripción proporcionada.
         3. Genera una lista viñetada corta identificando ESPECÍFICAMENTE qué datos técnicos o museográficos hacen falta en esa descripción para que sea una ficha profesional completa (por ejemplo: si faltan dimensiones, materiales, cultura/filiación cultural, datación exacta, técnicas de manufactura o estado físico actual).
         4. Sé breve, directo y mantén un tono profesional de auditoría. Responde en un solo párrafo introductorio seguido de los puntos clave.`;
 
-        // =========================================================================
-        // TU CONEXIÓN CON EL SDK OFICIAL (CON GEMINI-2.5-FLASH Y API v1)
-        // =========================================================================
         const CREDENCIAL_AUTH = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
 
         try {
             const { GoogleGenAI } = await import('https://esm.run/@google/genai');
-            
-            const ai = new GoogleGenAI({ 
-                apiKey: CREDENCIAL_AUTH,
-                apiVersion: "v1" 
-            });
+            const ai = new GoogleGenAI({ apiKey: CREDENCIAL_AUTH, apiVersion: "v1" });
 
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash', 
                 contents: promptParaGemini
             });
 
-            const respuestaIA = response.text;
-
             chatBox.innerHTML = `
                 <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
-                    <span>${respuestaIA}</span>
+                    <span>${response.text}</span>
                 </div>`;
                 
         } catch (error) {
@@ -393,6 +411,7 @@ class TarjetaAcervo {
         const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
         modalChat.show();
     }
+
     analizarYActualizarCeldaExcel(textoUsuario) {
         if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
             if (textoUsuario.trim().length > 3) {
