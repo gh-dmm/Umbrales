@@ -105,15 +105,14 @@ class AplicacionMuseo {
 
     activarEscuchadorGlobal() {
         document.addEventListener('click', (evento) => {
-            // BLINDAJE CRÍTICO: Buscamos si el elemento clickeado o su contenedor padre más cercano tiene la clase correcta
+            // Buscamos si el elemento clickeado o su contenedor padre tiene la clase correcta
             const clicker = evento.target.closest('.objeto-clicker-3d');
-            if (!clicker) return; // Si no es un objeto interactivo, ignoramos el clic por completo
+            if (!clicker) return; 
 
             const rawId = clicker.getAttribute('data-id');
             const origen = clicker.getAttribute('data-origen');
             const tipoVisor = clicker.getAttribute('data-visor');
 
-            // Validación de seguridad extra: si faltan atributos vitales, abortamos sin romper la app
             if (!rawId || !origen) {
                 console.warn("⚠️ Clic detectado pero faltan atributos de datos (data-id o data-origen) en el elemento.");
                 return;
@@ -133,7 +132,6 @@ class AplicacionMuseo {
         const rutaArchivo = this.RUTAS_EXCEL[origen];
         const statusDiv = document.getElementById('status-carga');
         
-        // BLINDAJE: Verificación segura antes de aplicar toUpperCase()
         const textoOrigen = origen ? origen.toUpperCase() : 'DESCONOCIDO';
         if(statusDiv) statusDiv.innerText = `Abriendo caja de cartón: ${textoOrigen}...`;
 
@@ -189,7 +187,11 @@ class AplicacionMuseo {
                 <div class="matriz-item-ranura">
                     <button class="btn-quitar-matriz" onclick="AppMuseo.removerDeVitrina('${item.origen}', '${item.id}')">&times;</button>
                     
-                    <img src="${item.imagen}" alt="${item.titulo}" class="objeto-clicker-3d" onclick="window.AppMuseo.instanciasTarjetas['${item.origen}_${item.id}'].desplegarEnPopup()">
+                    <img src="${item.imagen}" 
+                         alt="${item.titulo}" 
+                         class="img-vitrina-ranura" 
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=200&q=80';"
+                         onclick="window.AppMuseo.cargarDesdeVitrina('${item.origen}', ${item.id})">
                     
                     <div class="text-warning small fw-bold text-truncate mt-1 px-1" style="max-width: 120px; text-shadow: 1px 1px 2px black;">
                         ${item.titulo}
@@ -198,6 +200,17 @@ class AplicacionMuseo {
         });
 
         contenedor.innerHTML = htmlFinal;
+    }
+
+    // Método puente para levantar instancias de tarjetas cuando la sesión se reinicia
+    cargarDesdeVitrina(origen, id) {
+        const key = `${origen}_${id}`;
+        if (this.instanciasTarjetas[key]) {
+            this.instanciasTarjetas[key].desplegarEnPopup();
+            return;
+        }
+        console.log(`📡 Descargando celdas asíncronas para revivir objeto: ${key}`);
+        this.solicitarCargaExcel(id, origen, 'ficha');
     }
 
     removerDeVitrina(origen, id) {
@@ -255,9 +268,6 @@ class TarjetaAcervo {
 
     procesarCabecerasExcelEspecificas() {
         const fila = this.datosOriginales;
-        
-        // CORRECCIÓN RUTA BASE: './img/...' obliga al navegador a buscar de manera relativa al archivo index.html
-        // evitando errores de dominio raíz en servidores de GitHub Pages
         const prefijoRuta = "./img/";
 
         switch (this.origen) {
@@ -270,7 +280,7 @@ class TarjetaAcervo {
                 break;
             case 'monumentos':
                 this.UI.titulo = fila['nombre_actual'] || "Monumento";
-                this.UI.imagen = `${prefijoRuta}img2.jpeg`;
+                this.UI.imagen = `${prefijoRuta}acueducto.jpg`;
                 this.UI.linea1 = `Tipo: ${fila['tipo_monumento'] || 'Inmueble'}`;
                 this.UI.linea2 = `Entidad: ${fila['entidad_federativa'] || 'N/D'}`;
                 this.UI.nombreColumnaOriginal = 'nombre_original'; 
@@ -279,7 +289,7 @@ class TarjetaAcervo {
                 this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
                 
                 const archivoImg = fila['imagen'] ? String(fila['imagen']).trim() : '';
-                this.UI.imagen = archivoImg !== '' ? `${prefijoRuta}${archivoImg}` : `${prefijoRuta}img1.jpg`;
+                this.UI.imagen = archivoImg !== '' ? `${prefijoRuta}${archivoImg}` : `${prefijoRuta}penacho.jpg`;
                 
                 this.UI.linea1 = `📍 Ubicación: ${fila['localizacion'] || 'No especificada'}`; 
                 this.UI.linea2 = `Colección: Objetos Externos del Museo`;
@@ -382,7 +392,7 @@ class TarjetaAcervo {
         const chatBox = document.getElementById('modal-chat-box');
         chatBox.innerHTML = `<div class="text-muted">Gemini analizando la descripción de la pieza...</div>`;
 
-        const promptParaGemini = `Actúas como un curador y auditor experto de bases de datos de museos arqueológicos e históricos.
+        const promptParaGemini = `Actúas como un curador y auditor expert de bases de datos de museos arqueológicos e históricos.
         Estás auditando un registro de la colección [${this.origen}].
         DATOS DE LA INTERFAZ:
         - Nombre/Título de la pieza: "${this.UI.titulo}"
@@ -395,45 +405,4 @@ class TarjetaAcervo {
         3. Genera una lista viñetada corta identificando ESPECÍFICAMENTE qué datos técnicos o museográficos hacen falta en esa descripción para que sea una ficha profesional completa (por ejemplo: si faltan dimensiones, materiales, cultura/filiación cultural, datación exacta, técnicas de manufactura o estado físico actual).
         4. Sé breve, directo y mantén un tono profesional de auditoría. Responde en un solo párrafo introductorio seguido de los puntos clave.`;
 
-        const CREDENCIAL_AUTH = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
-
-        try {
-            const { GoogleGenAI } = await import('https://esm.run/@google/genai');
-            const ai = new GoogleGenAI({ apiKey: CREDENCIAL_AUTH, apiVersion: "v1" });
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash', 
-                contents: promptParaGemini
-            });
-
-            chatBox.innerHTML = `
-                <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
-                    <span>${response.text}</span>
-                </div>`;
-                
-        } catch (error) {
-            chatBox.innerHTML = `
-                <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded small">
-                    <strong>Error de Comunicación:</strong><br>
-                    <span class="text-muted text-xs">${error.message}</span>
-                </div>`;
-            console.error(error);
-        }
-        
-        const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
-        modalChat.show();
-    }
-
-    analizarYActualizarCeldaExcel(textoUsuario) {
-        if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
-            if (textoUsuario.trim().length > 3) {
-                this.UI.campoEscaneable = textoUsuario;
-                this.datosOriginales[this.UI.nombreColumnaOriginal] = textoUsuario;
-                const elemExcel = document.getElementById(`dom-excel-${this.origen}-${this.id}`);
-                if (elemExcel) elemExcel.innerText = textoUsuario;
-                return `Análisis Sintáctico Exitoso. Parchado en el Excel.`;
-            }
-        }
-        return `Celda ya protegida con registros sólidos.`;
-    }
-}
+        const CREDENCIAL_AUTH = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l
