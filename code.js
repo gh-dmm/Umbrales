@@ -314,7 +314,7 @@ class TarjetaAcervo {
                 break;
             case 'solicitudes':
                 this.UI.titulo = fila['asunto'] || "Solicitud";
-                this.UI.imagen = `${prefijoRuta}transcripcion.jpg`;
+                this.UI.imagen = `${prefijoRuta}img6.jpeg`;
                 this.UI.linea1 = `Ingreso: ${fila['fecha_ingreso'] || 'N/A'}`;
                 this.UI.linea2 = `Volumen: ${fila['total'] || 'N/A'}`;
                 this.UI.nombreColumnaOriginal = 'observaciones'; 
