@@ -6,7 +6,27 @@ body {
     color: #3d2c20;
     font-family: 'Courier New', Courier, monospace;
 }
+/* =========================================================================
+   ANIMACIÓN DE ZOOM DE CARTÓN PARA POPUPS (SPA DIORAMA)
+   ========================================================================= */
 
+/* Estado inicial: El modal está oculto y encogido */
+#acervoPopupModal .modal-dialog {
+    transform: scale(0.7);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+
+/* Estado activo: Cuando Bootstrap añade la clase de visualización real */
+#acervoPopupModal.show .modal-dialog {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Opcional: Si quieres que el fondo oscuro (backdrop) también entre con suavidad */
+.modal-backdrop {
+    transition: opacity 0.3s ease !important;
+}
 /* Paneles de cartón recortados */
 .carton-panel {
     background-color: #cbb4a1;
