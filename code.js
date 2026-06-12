@@ -273,7 +273,7 @@ class TarjetaAcervo {
         switch (this.origen) {
             case 'inah_museos':
                 this.UI.titulo = fila['nombre'] || "Museo INAH";
-                this.UI.imagen = `${prefijoRuta}museo_regional.jpg`;
+                this.UI.imagen = `${prefijoRuta}img3.jpeg`;
                 this.UI.linea1 = `Estado: ${fila['estado'] || 'N/A'}`;
                 this.UI.linea2 = `Municipio: ${fila['municipio_localidad'] || 'N/A'}`;
                 this.UI.nombreColumnaOriginal = 'condicion'; 
