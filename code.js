@@ -336,9 +336,9 @@ class TarjetaAcervo {
     Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
 
     // =========================================================================
-    // CORRECCIÓN CRÍTICA DE RUTA: Ubicación exacta del método ejecutor (:generateContent)
+    // CORRECCIÓN DEFINITIVA DE ENDPOINT: Cambiado de v1beta a v1 estable
     // =========================================================================
-    const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw`;
+    const urlGemini = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw`;
 
     try {
         const response = await fetch(urlGemini, {
@@ -351,9 +351,12 @@ class TarjetaAcervo {
 
         const data = await response.json();
         
-        // Validamos si la API de Google arrojó algún mensaje de error interno estructurado
+        // Si la API arroja un error estructurado (por ejemplo, si la llave expiró o se bloqueó por CORS)
         if (data.error) {
-            chatBox.innerHTML = `<div class="text-danger">Error de API: ${data.error.message}</div>`;
+            chatBox.innerHTML = `
+                <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded">
+                    <strong>Fallo de API:</strong> ${data.error.message}
+                </div>`;
             return;
         }
 
@@ -365,7 +368,7 @@ class TarjetaAcervo {
             </div>`;
             
     } catch (error) {
-        chatBox.innerHTML = `<div class="text-danger">Error de enlace asíncrono.</div>`;
+        chatBox.innerHTML = `<div class="text-danger">Error de enlace asíncrono en el diorama.</div>`;
         console.error("Detalle del fallo:", error);
     }
     
