@@ -323,41 +323,54 @@ class TarjetaAcervo {
     }
 
     async abrirChatGemini() {
-        const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
-        if(modalPopup) modalPopup.hide();
+    const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
+    if(modalPopup) modalPopup.hide();
 
-        document.getElementById('modal-titulo-acervo').innerText = `Gemini AI: ${this.UI.titulo}`;
-        document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
+    document.getElementById('modal-titulo-acervo').innerText = `Gemini AI: ${this.UI.titulo}`;
+    document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
+    
+    const chatBox = document.getElementById('modal-chat-box');
+    chatBox.innerHTML = `<div class="text-muted">Gemini está analizando el cartón...</div>`;
+
+    const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
+    Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
+
+    // =========================================================================
+    // CORRECCIÓN CRÍTICA DE RUTA: Ubicación exacta del método ejecutor (:generateContent)
+    // =========================================================================
+    const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw`;
+
+    try {
+        const response = await fetch(urlGemini, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                contents: [{ parts: [{ text: promptParaGemini }] }] 
+            })
+        });
+
+        const data = await response.json();
         
-        const chatBox = document.getElementById('modal-chat-box');
-        chatBox.innerHTML = `<div class="text-muted">Gemini está analizando el cartón...</div>`;
-
-        const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
-        Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
-
-        try {
-            const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw`;
-
-const response = await fetch(urlGemini, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-        contents: [{ parts: [{ text: promptParaGemini }] }] 
-    })
-});
-            const data = await response.json();
-            const respuestaIA = data.candidates[0].content.parts[0].text;
-
-            chatBox.innerHTML = `
-                <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
-                    <span>${respuestaIA}</span>
-                </div>`;
-        } catch (error) {
-            chatBox.innerHTML = `<div class="text-danger">Error de enlace.</div>`;
+        // Validamos si la API de Google arrojó algún mensaje de error interno estructurado
+        if (data.error) {
+            chatBox.innerHTML = `<div class="text-danger">Error de API: ${data.error.message}</div>`;
+            return;
         }
-        
-        new bootstrap.Modal(document.getElementById('geminiChatModal')).show();
+
+        const respuestaIA = data.candidates[0].content.parts[0].text;
+
+        chatBox.innerHTML = `
+            <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
+                <span>${respuestaIA}</span>
+            </div>`;
+            
+    } catch (error) {
+        chatBox.innerHTML = `<div class="text-danger">Error de enlace asíncrono.</div>`;
+        console.error("Detalle del fallo:", error);
     }
+    
+    new bootstrap.Modal(document.getElementById('geminiChatModal')).show();
+}
 
     analizarYActualizarCeldaExcel(textoUsuario) {
         if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
