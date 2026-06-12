@@ -287,6 +287,7 @@ class TarjetaAcervo {
                 break;
             case 'objetos_externos':
                 this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
+                this.id=fila['id'];
                 if (archivoImg !== '') {
                     this.UI.imagen = `${prefijoRuta}${archivoImg}`;
                 } else {
