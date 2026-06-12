@@ -328,53 +328,51 @@ class TarjetaAcervo {
     }
 
  async abrirChatGemini() {
-        // 1. Liberamos el foco ARIA del botón para evitar congelamientos de Bootstrap
-        if (document.activeElement) {
-            document.activeElement.blur();
-        }
+        // ... (Mantienes tus líneas iniciales de remover foco y ocultar modal igual) ...
 
-        // 2. Cerramos el modal del visor de cartón de forma limpia
-        const modalElement = document.getElementById('acervoPopupModal');
-        const modalPopup = bootstrap.Modal.getInstance(modalElement);
-        if (modalPopup) {
-            modalPopup.hide();
-        }
-
-        // 3. Inicializamos las cajas de texto de la interfaz de tu diorama
-        document.getElementById('modal-titulo-acervo').innerText = `Gemini AI Engine: ${this.UI.titulo}`;
+        document.getElementById('modal-titulo-acervo').innerText = `Auditoría de Ficha: ${this.UI.titulo}`;
         document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
         
         const chatBox = document.getElementById('modal-chat-box');
-        chatBox.innerHTML = `<div class="text-muted">Auditando datos de origen con Gemini 2.5...</div>`;
-
-        const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
-        Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}". 
-        Por favor, dame una opinión profesional corta de este registro en un párrafo aproximado de 40 palabras.`;
+        chatBox.innerHTML = `<div class="text-muted">Gemini analizando la descripción de la pieza...</div>`;
 
         // =========================================================================
-        // TU CREDENCIAL LARGA COMPLETA CORPORATIVA (AQ.Ab...)
+        // NUEVO PROMPT: Directivas estrictas para evitar respuestas genéricas
+        // =========================================================================
+        const promptParaGemini = `Actúas como un curador y auditor experto de bases de datos de museos arqueológicos e históricos.
+        
+        Estás auditando un registro de la colección [${this.origen}].
+        DATOS DE LA INTERFAZ:
+        - Nombre/Título de la pieza: "${this.UI.titulo}"
+        - ${this.UI.linea1}
+        
+        DESCRIPCIÓN EN EL CAMPO ESCANEABLE DE EXCEL:
+        "${this.UI.campoEscaneable}"
+        
+        INSTRUCCIONES ESTRICTAS DE RESPUESTA:
+        1. NO te limites a decir de forma genérica que "falta información" o que el registro está incompleto.
+        2. Analiza el texto de la descripción proporcionada.
+        3. Genera una lista viñetada corta identificando ESPECÍFICAMENTE qué datos técnicos o museográficos hacen falta en esa descripción para que sea una ficha profesional completa (por ejemplo: si faltan dimensiones, materiales, cultura/filiación cultural, datación exacta, técnicas de manufactura o estado físico actual).
+        4. Sé breve, directo y mantén un tono profesional de auditoría. Responde en un solo párrafo introductorio seguido de los puntos clave.`;
+
+        // =========================================================================
+        // TU CONEXIÓN CON EL SDK OFICIAL (CON GEMINI-2.5-FLASH Y API v1)
         // =========================================================================
         const CREDENCIAL_AUTH = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
 
         try {
-            // Importamos dinámicamente el SDK unificado oficial de Google AI desde el CDN
             const { GoogleGenAI } = await import('https://esm.run/@google/genai');
             
-            // Inicializamos el constructor unificado forzando el canal estable 'v1'
             const ai = new GoogleGenAI({ 
                 apiKey: CREDENCIAL_AUTH,
                 apiVersion: "v1" 
             });
 
-            // =========================================================================
-            // AJUSTE MAESTRO: Cambiamos a gemini-2.5-flash para compatibilidad en v1
-            // =========================================================================
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash', 
                 contents: promptParaGemini
             });
 
-            // Extraemos el texto completo procesado de forma nativa por el SDK
             const respuestaIA = response.text;
 
             chatBox.innerHTML = `
@@ -385,13 +383,12 @@ class TarjetaAcervo {
         } catch (error) {
             chatBox.innerHTML = `
                 <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded small">
-                    <strong>Fallo de Comunicación SDK:</strong><br>
+                    <strong>Error de Comunicación:</strong><br>
                     <span class="text-muted text-xs">${error.message}</span>
                 </div>`;
-            console.error("Detalle del fallo estructural:", error);
+            console.error(error);
         }
         
-        // 4. Desplegamos el modal limpio de Gemini
         const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
         modalChat.show();
     }
