@@ -405,4 +405,45 @@ class TarjetaAcervo {
         3. Genera una lista viñetada corta identificando ESPECÍFICAMENTE qué datos técnicos o museográficos hacen falta en esa descripción para que sea una ficha profesional completa (por ejemplo: si faltan dimensiones, materiales, cultura/filiación cultural, datación exacta, técnicas de manufactura o estado físico actual).
         4. Sé breve, directo y mantén un tono profesional de auditoría. Responde en un solo párrafo introductorio seguido de los puntos clave.`;
 
-        const CREDENCIAL_AUTH = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l
+        const CREDENCIAL_AUTH = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
+
+        try {
+            const { GoogleGenAI } = await import('https://esm.run/@google/genai');
+            const ai = new GoogleGenAI({ apiKey: CREDENCIAL_AUTH, apiVersion: "v1" });
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash', 
+                contents: promptParaGemini
+            });
+
+            chatBox.innerHTML = `
+                <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
+                    <span>${response.text}</span>
+                </div>`;
+                
+        } catch (error) {
+            chatBox.innerHTML = `
+                <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded small">
+                    <strong>Error de Comunicación:</strong><br>
+                    <span class="text-muted text-xs">${error.message}</span>
+                </div>`;
+            console.error(error);
+        }
+        
+        const modalChat = new bootstrap.Modal(document.getElementById('geminiChatModal'));
+        modalChat.show();
+    }
+
+    analizarYActualizarCeldaExcel(textoUsuario) {
+        if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
+            if (textoUsuario.trim().length > 3) {
+                this.UI.campoEscaneable = textoUsuario;
+                this.datosOriginales[this.UI.nombreColumnaOriginal] = textoUsuario;
+                const elemExcel = document.getElementById(`dom-excel-${this.origen}-${this.id}`);
+                if (elemExcel) elemExcel.innerText = textoUsuario;
+                return `Análisis Sintáctico Exitoso. Parchado en el Excel.`;
+            }
+        }
+        return `Celda ya protegida con registros sólidos.`;
+    }
+}
