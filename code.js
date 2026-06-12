@@ -270,7 +270,7 @@ class TarjetaAcervo {
                 break;
             case 'monumentos':
                 this.UI.titulo = fila['nombre_actual'] || "Monumento";
-                this.UI.imagen = `${prefijoRuta}acueducto.jpg`;
+                this.UI.imagen = `${prefijoRuta}img2.jpeg`;
                 this.UI.linea1 = `Tipo: ${fila['tipo_monumento'] || 'Inmueble'}`;
                 this.UI.linea2 = `Entidad: ${fila['entidad_federativa'] || 'N/D'}`;
                 this.UI.nombreColumnaOriginal = 'nombre_original'; 
@@ -279,7 +279,7 @@ class TarjetaAcervo {
                 this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
                 
                 const archivoImg = fila['imagen'] ? String(fila['imagen']).trim() : '';
-                this.UI.imagen = archivoImg !== '' ? `${prefijoRuta}${archivoImg}` : `${prefijoRuta}penacho.jpg`;
+                this.UI.imagen = archivoImg !== '' ? `${prefijoRuta}${archivoImg}` : `${prefijoRuta}img1.jpg`;
                 
                 this.UI.linea1 = `📍 Ubicación: ${fila['localizacion'] || 'No especificada'}`; 
                 this.UI.linea2 = `Colección: Objetos Externos del Museo`;
