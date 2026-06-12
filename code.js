@@ -287,7 +287,17 @@ class TarjetaAcervo {
                 break;
             case 'objetos_externos':
                 this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
-                
+                if (archivoImg !== '') {
+                    this.UI.imagen = `${prefijoRuta}${archivoImg}`;
+                } else {
+                    // Mapeo dinámico por ID para tus dos objetos externos
+                    if (this.id === 1) {
+                        this.UI.imagen = `${prefijoRuta}penacho.jpg`; // Imagen para tu primer objeto (ej. Penacho)
+                    } else if (this.id === 4) {
+                        this.UI.imagen = `${prefijoRuta}img4.png`;    // Imagen para tu segundo objeto externo
+                    } else {
+                        this.UI.imagen = `${prefijoRuta}img5.png`; // Por si en el futuro agregas un tercero
+                    }
                 const archivoImg = fila['imagen'] ? String(fila['imagen']).trim() : '';
                 this.UI.imagen = archivoImg !== '' ? `${prefijoRuta}${archivoImg}` : `${prefijoRuta}img1.jpg`;
                 
