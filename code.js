@@ -336,11 +336,15 @@ class TarjetaAcervo {
         Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
 
         try {
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: promptParaGemini }] }] })
-            });
+            const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw`;
+
+const response = await fetch(urlGemini, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        contents: [{ parts: [{ text: promptParaGemini }] }] 
+    })
+});
             const data = await response.json();
             const respuestaIA = data.candidates[0].content.parts[0].text;
 
