@@ -59,7 +59,7 @@ class AplicacionMuseo {
         this.instanciasTarjetas = {};
         this.inventario = new InventarioCultural();
         
-        // 2. Detección automática del entorno (Localhost vs GitHub Pages)
+        // 2. Detección automática del entorno (Rutas relativas explícitas con './')
         const esGitHubPages = window.location.hostname.includes('github.io');
         const repoName = esGitHubPages ? window.location.pathname.split('/')[1] : '';
         const baseRuta = esGitHubPages ? `/${repoName}/` : '';
@@ -76,7 +76,7 @@ class AplicacionMuseo {
 
         // 4. Activamos los escuchadores automáticos de clicks
         this.activarEscuchadorGlobal();
-        this.actualizarVistaVitrina(); // Render inicial con LocalStorage
+        this.actualizarVistaVitrina(); 
     }
 
     /**
@@ -98,7 +98,6 @@ class AplicacionMuseo {
             console.warn(`[Error de Escenario] No existe un contenedor con ID: escenario-${destinoId}`);
         }
 
-        // CORRECCIÓN: Apunta al nombre exacto de tu método de renderizado
         if (destinoId === 'casa') {
             this.actualizarVistaVitrina();
         }
@@ -106,13 +105,21 @@ class AplicacionMuseo {
 
     activarEscuchadorGlobal() {
         document.addEventListener('click', (evento) => {
-            const elementoTocado = evento.target;
-            if (elementoTocado.classList.contains('objeto-clicker-3d')) {
-                const id = parseInt(elementoTocado.getAttribute('data-id'));
-                const origen = elementoTocado.getAttribute('data-origen');
-                const tipoVisor = elementoTocado.getAttribute('data-visor');
-                this.solicitarCargaExcel(id, origen, tipoVisor);
+            // BLINDAJE CRÍTICO: Buscamos si el elemento clickeado o su contenedor padre más cercano tiene la clase correcta
+            const clicker = evento.target.closest('.objeto-clicker-3d');
+            if (!clicker) return; // Si no es un objeto interactivo, ignoramos el clic por completo
+
+            const rawId = clicker.getAttribute('data-id');
+            const origen = clicker.getAttribute('data-origen');
+            const tipoVisor = clicker.getAttribute('data-visor');
+
+            // Validación de seguridad extra: si faltan atributos vitales, abortamos sin romper la app
+            if (!rawId || !origen) {
+                console.warn("⚠️ Clic detectado pero faltan atributos de datos (data-id o data-origen) en el elemento.");
+                return;
             }
+
+            this.solicitarCargaExcel(parseInt(rawId), origen, tipoVisor || 'ficha');
         });
     }
 
@@ -125,7 +132,10 @@ class AplicacionMuseo {
 
         const rutaArchivo = this.RUTAS_EXCEL[origen];
         const statusDiv = document.getElementById('status-carga');
-        if(statusDiv) statusDiv.innerText = `Abriendo caja de cartón: ${origen.toUpperCase()}...`;
+        
+        // BLINDAJE: Verificación segura antes de aplicar toUpperCase()
+        const textoOrigen = origen ? origen.toUpperCase() : 'DESCONOCIDO';
+        if(statusDiv) statusDiv.innerText = `Abriendo caja de cartón: ${textoOrigen}...`;
 
         fetch(rutaArchivo)
             .then(response => {
@@ -165,9 +175,8 @@ class AplicacionMuseo {
         const contenedor = document.getElementById('contenedor-vitrina-items');
         if (!contenedor) return;
 
-        const listaItems = this.inventario.obtainTodos ? this.inventario.obtainTodos() : this.inventario.obtenerTodos();
+        const listaItems = this.inventario.obtenerTodos();
 
-        // CORRECCIÓN: Leemos de la lista interna devuelta por la clase InventarioCultural
         if (!listaItems || listaItems.length === 0) {
             contenedor.innerHTML = `<div class="text-center text-muted py-5 w-100" style="grid-column: span 4;">La vitrina está vacía.</div>`;
             return;
@@ -175,7 +184,6 @@ class AplicacionMuseo {
 
         let htmlFinal = '';
 
-        // Recorremos el listado encapsulado de forma segura
         listaItems.forEach(item => {
             htmlFinal += `
                 <div class="matriz-item-ranura">
@@ -192,11 +200,10 @@ class AplicacionMuseo {
         contenedor.innerHTML = htmlFinal;
     }
 
-    // CORRECCIÓN: Añadido método puente que vincula los clicks del HTML con la clase Inventario
     removerDeVitrina(origen, id) {
         this.inventario.remover(origen, id);
-        this.actualiazarBotonPopupEnCaliente(origen, id); // Actualiza si la tarjeta está abierta
-        this.actualizarVistaVitrina(); // Re-renderiza el Grid invisible
+        this.actualiazarBotonPopupEnCaliente(origen, id);
+        this.actualizarVistaVitrina(); 
     }
 
     actualiazarBotonPopupEnCaliente(origen, id) {
@@ -248,17 +255,22 @@ class TarjetaAcervo {
 
     procesarCabecerasExcelEspecificas() {
         const fila = this.datosOriginales;
+        
+        // CORRECCIÓN RUTA BASE: './img/...' obliga al navegador a buscar de manera relativa al archivo index.html
+        // evitando errores de dominio raíz en servidores de GitHub Pages
+        const prefijoRuta = "./img/";
+
         switch (this.origen) {
             case 'inah_museos':
                 this.UI.titulo = fila['nombre'] || "Museo INAH";
-                this.UI.imagen = "img/museo_regional.jpg";
+                this.UI.imagen = `${prefijoRuta}museo_regional.jpg`;
                 this.UI.linea1 = `Estado: ${fila['estado'] || 'N/A'}`;
                 this.UI.linea2 = `Municipio: ${fila['municipio_localidad'] || 'N/A'}`;
                 this.UI.nombreColumnaOriginal = 'condicion'; 
                 break;
             case 'monumentos':
                 this.UI.titulo = fila['nombre_actual'] || "Monumento";
-                this.UI.imagen = "img/acueducto.jpg";
+                this.UI.imagen = `${prefijoRuta}acueducto.jpg`;
                 this.UI.linea1 = `Tipo: ${fila['tipo_monumento'] || 'Inmueble'}`;
                 this.UI.linea2 = `Entidad: ${fila['entidad_federativa'] || 'N/D'}`;
                 this.UI.nombreColumnaOriginal = 'nombre_original'; 
@@ -267,7 +279,7 @@ class TarjetaAcervo {
                 this.UI.titulo = fila['nombre'] || "Pieza de Exposición";
                 
                 const archivoImg = fila['imagen'] ? String(fila['imagen']).trim() : '';
-                this.UI.imagen = archivoImg !== '' ? `img/${archivoImg}` : "img/penacho.jpg";
+                this.UI.imagen = archivoImg !== '' ? `${prefijoRuta}${archivoImg}` : `${prefijoRuta}penacho.jpg`;
                 
                 this.UI.linea1 = `📍 Ubicación: ${fila['localizacion'] || 'No especificada'}`; 
                 this.UI.linea2 = `Colección: Objetos Externos del Museo`;
@@ -275,7 +287,7 @@ class TarjetaAcervo {
                 break;
             case 'solicitudes':
                 this.UI.titulo = fila['asunto'] || "Solicitud";
-                this.UI.imagen = "img/transcripcion.jpg";
+                this.UI.imagen = `${prefijoRuta}transcripcion.jpg`;
                 this.UI.linea1 = `Ingreso: ${fila['fecha_ingreso'] || 'N/A'}`;
                 this.UI.linea2 = `Volumen: ${fila['total'] || 'N/A'}`;
                 this.UI.nombreColumnaOriginal = 'observaciones'; 
