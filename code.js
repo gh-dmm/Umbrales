@@ -323,57 +323,62 @@ class TarjetaAcervo {
     }
 
     async abrirChatGemini() {
-    const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
-    if(modalPopup) modalPopup.hide();
+        const modalPopup = bootstrap.Modal.getInstance(document.getElementById('acervoPopupModal'));
+        if(modalPopup) modalPopup.hide();
 
-    document.getElementById('modal-titulo-acervo').innerText = `Gemini AI: ${this.UI.titulo}`;
-    document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
-    
-    const chatBox = document.getElementById('modal-chat-box');
-    chatBox.innerHTML = `<div class="text-muted">Gemini está analizando el cartón...</div>`;
-
-    const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
-    Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
-
-    // =========================================================================
-    // CORRECCIÓN DEFINITIVA DE ENDPOINT: Cambiado de v1beta a v1 estable
-    // =========================================================================
-  const API_KEY = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw";
-        const urlGemini = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-    try {
-        const response = await fetch(urlGemini, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-        contents: [{ parts: [{ text: promptParaGemini }] }] 
-    })
-});
-        const data = await response.json();
+        document.getElementById('modal-titulo-acervo').innerText = `Gemini AI: ${this.UI.titulo}`;
+        document.getElementById('modal-instancia-key').value = `${this.origen}_${this.id}`;
         
-        // Si la API arroja un error estructurado (por ejemplo, si la llave expiró o se bloqueó por CORS)
-        if (data.error) {
-            chatBox.innerHTML = `
-                <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded">
-                    <strong>Fallo de API:</strong> ${data.error.message}
-                </div>`;
-            return;
-        }
+        const chatBox = document.getElementById('modal-chat-box');
+        chatBox.innerHTML = `<div class="text-muted">Gemini está analizando el cartón...</div>`;
 
-        const respuestaIA = data.candidates[0].content.parts[0].text;
+        const promptParaGemini = `Actúa como un auditor de Excel. Analiza los siguientes datos de la fila de origen [${this.origen}]: 
+        Atributos: ${this.UI.linea1} | ${this.UI.linea2}. El campo escaneable actual dice: "${this.UI.campoEscaneable}".`;
 
-        chatBox.innerHTML = `
-            <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
-                <span>${respuestaIA}</span>
-            </div>`;
+        // =========================================================================
+        // TU CREDENCIAL LARGA VÁLIDA (INICIA CON AQ.Ab...)
+        // =========================================================================
+        const API_KEY = "AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw"; 
+        
+        // ENDPOINT ADAPTADO PARA SOLICITUDES DE IDENTIDAD UNIFICADA v1
+        const urlGemini = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+        try {
+            const response = await fetch(urlGemini, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    contents: [{ parts: [{ text: promptParaGemini }] }] 
+                })
+            });
+
+            const data = await response.json();
             
-    } catch (error) {
-        chatBox.innerHTML = `<div class="text-danger">Error de enlace asíncrono en el diorama.</div>`;
-        console.error("Detalle del fallo:", error);
-    }
-    
-    new bootstrap.Modal(document.getElementById('geminiChatModal')).show();
-}
+            // Si el servidor de Google Cloud te responde con un bloqueo específico
+            if (data.error) {
+                chatBox.innerHTML = `
+                    <div class="p-2 mb-2 bg-dark text-danger border-start border-4 border-danger rounded">
+                        <strong>Fallo de Autenticación Cloud:</strong> ${data.error.message}
+                    </div>`;
+                return;
+            }
 
+            const respuestaIA = data.candidates[0].content.parts[0].text;
+
+            chatBox.innerHTML = `
+                <div class="p-2 mb-2 bg-dark text-warning border-start border-4 border-warning rounded">
+                    <span>${respuestaIA}</span>
+                </div>`;
+                
+        } catch (error) {
+            chatBox.innerHTML = `<div class="text-danger">Error de enlace asíncrono en el diorama.</div>`;
+            console.error("Detalle del fallo:", error);
+        }
+        
+        new bootstrap.Modal(document.getElementById('geminiChatModal')).show();
+    }
     analizarYActualizarCeldaExcel(textoUsuario) {
         if (this.UI.campoEscaneable.toLowerCase() === 'sin informacion') {
             if (textoUsuario.trim().length > 3) {
