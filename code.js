@@ -52,7 +52,7 @@ class AplicacionMuseo {
 
         // 4. Activamos los escuchadores automáticos de clicks
         this.activarEscuchadorGlobal();
-        this.actualizarVitrinaGrafica(); // Render inicial vacío
+        this.actualizarVistaVitrina(); // Render inicial vacío
     }
 
     /**
