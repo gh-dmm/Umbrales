@@ -338,17 +338,17 @@ class TarjetaAcervo {
     // =========================================================================
     // CORRECCIÓN DEFINITIVA DE ENDPOINT: Cambiado de v1beta a v1 estable
     // =========================================================================
-    const urlGemini = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6JwvHT9jL1igTiCvLvg_nRg3W-l-v1MkCmYIZlt2WFwAw`;
+   const urlGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+
 
     try {
         const response = await fetch(urlGemini, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                contents: [{ parts: [{ text: promptParaGemini }] }] 
-            })
-        });
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        contents: [{ parts: [{ text: promptParaGemini }] }] 
+    })
+});
         const data = await response.json();
         
         // Si la API arroja un error estructurado (por ejemplo, si la llave expiró o se bloqueó por CORS)
